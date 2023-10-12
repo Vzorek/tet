@@ -1,17 +1,58 @@
 # BlackBox (Tet)
 
+## Goal
+
+System for controlling and monitoring Lantern-like devices to create more complex games.
+
+### Functional requirements
+1. Devices must be able to be controlled remotely
+2. Devices must be able to report their state
+3. Devices must be able to report events
+4. It should be easy to add new devices to system
+5. System should be able support running on both local network and internet
+6. System should be able to piggyback on existing infrastructure
+7. System should be able to create its own infrastructure
+8. System will give the organizer live overview of the game
+9. System will give the organizer ability to control the game from his device(phone, laptop, ...)
+
+
+### Non-functional requirements
+1. The latency of commands must be low
+2. The system must be able to handle large number of devices
+
+
 ## Devices
 
-Currently supported devices:
-- [x] BlackBox
-- [x] Lucerna
-- [x] Maják
-- [x] Semafor
-- [x] Artefakt
-- [ ] Semi-semafor
-- [ ] BT-reproduktor
+### Device types
 
-## Communication
+There are two main types of devices:
+1. Game stations
+    - Big static devices connected to the main infrastructure
+
+2. Servers
+    - Devices that control localized subset of game stations
+    - They are connected to the main infrastructure and often create it
+
+3. User tokens
+    - Small portable devices that are carried by players
+    - They don't connect to the main infrastructure directly
+    - They connect to game stations and report their state to them
+
+Primary supported devices:
+- Game stations:
+    + [x] Lucerna
+    + [x] Maják
+    + [x] Artefakt
+    + [x] BlackBox
+    + [x] Semafor
+    + [ ] BT-reproduktor
+
+- User tokens:
+    + [ ] Semi-semafor
+    + [ ] RFID token
+    + [ ] Phone
+
+## Communication between game stations and main server
 
 - Devices connect to broker running on central server with mqtts with double sided certificates.
 - All messages are to be send with qos 2 with small session keepalive time
@@ -25,7 +66,7 @@ Currently supported devices:
     + "devices/`<device_id>`/commands"
 
 - `state_topic`
-    + device specific mqtt topic used for reporting connection status of device and announcing capabilites
+    + device specific mqtt topic used for reporting connection status of device, announcing capabilites and initial state, where applicable
     + "devices/`<device_id>`"
 
 - `event_topic`
