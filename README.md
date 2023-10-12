@@ -110,7 +110,7 @@ Commands are in form of:
 }
 ```
 
-Sending multiple commands at once is also supported using json array:
+Sending multiple commands at once is also supported using json array, this creates a compound command, which is executed atomically (all changes are applied at once):
 ```json
 [
     {
