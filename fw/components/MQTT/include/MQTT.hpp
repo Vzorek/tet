@@ -40,6 +40,13 @@ public:
     Client(const std::string& host, const std::optional<Message>& will = std::nullopt);
     Client(const std::string& host, const std::string& user, const std::string& password, const std::optional<Message>& will = std::nullopt);
     Client(const Config& config);
+
+    Client(const Client&) = delete;
+    Client(Client&&) = default;
+
+    Client& operator=(const Client&) = delete;
+    Client& operator=(Client&&) = default;
+
     ~Client();
 
     void start();

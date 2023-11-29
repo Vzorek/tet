@@ -9,7 +9,9 @@ idf_component_register()
 
 include(FetchContent)
 
-FetchContent_Declare(nlohmann_json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
-FetchContent_MakeAvailable(nlohmann_json)
+FetchContent_Declare(glaze URL https://github.com/stephenberry/glaze/archive/refs/heads/main.zip)
 
-target_link_libraries(${COMPONENT_LIB} INTERFACE nlohmann_json::nlohmann_json)
+FetchContent_MakeAvailable(glaze)
+
+target_include_directories(${COMPONENT_LIB} INTERFACE "${glaze_SOURCE_DIR}/include")
+target_link_libraries(${COMPONENT_LIB} INTERFACE glaze::glaze)

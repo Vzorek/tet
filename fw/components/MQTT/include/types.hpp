@@ -58,13 +58,13 @@ using BundleAttacher = esp_err_t (*)(void* conf);
 
 struct Config {
     std::string_view host;
-    std::optional<std::string_view> user;
-    std::optional<std::string_view> password;
-    std::variant<NoCertificate, std::string_view, BundleAttacher, UseGlobalStore> serverCertificate;
-    std::optional<std::string_view> clientCertificate;
-    std::optional<std::string_view> clientKey;
-    std::optional<Message> will;
-    std::optional<std::string_view> clientId;
+    std::optional<std::string_view> user = std::nullopt;
+    std::optional<std::string_view> password = std::nullopt;
+    std::variant<NoCertificate, std::string_view, BundleAttacher, UseGlobalStore> serverCertificate = NoCertificate{};
+    std::optional<std::string_view> clientCertificate = std::nullopt;
+    std::optional<std::string_view> clientKey = std::nullopt;
+    std::optional<Message> will = std::nullopt;
+    std::optional<std::string_view> clientId = std::nullopt;
 };
 
 } // namespace MQTT

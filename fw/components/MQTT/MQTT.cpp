@@ -26,6 +26,7 @@ void Client::trampoline(void* handler_args, esp_event_base_t base, int32_t event
 
 Client::Client(const Config& config)
     : m_config(esp_mqtt_client_config_t {}) {
+    ESP_LOGI(s_tag, "Initializing MQTT client");
     m_config.broker.address.uri = config.host.data();
 
     if (config.clientId)

@@ -9,7 +9,8 @@ idf_component_register()
 
 include(FetchContent)
 
-FetchContent_Declare(nlohmann_json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
-FetchContent_MakeAvailable(nlohmann_json)
+FetchContent_Declare(small_vectors URL https://github.com/arturbac/small_vectors/archive/refs/heads/master.zip)
+FetchContent_Populate(small_vectors)
+# FetchContent_MakeAvailable(small_vectors)
 
-target_link_libraries(${COMPONENT_LIB} INTERFACE nlohmann_json::nlohmann_json)
+target_include_directories(${COMPONENT_LIB} INTERFACE "${small_vectors_SOURCE_DIR}/include")

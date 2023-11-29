@@ -9,7 +9,8 @@ idf_component_register()
 
 include(FetchContent)
 
-FetchContent_Declare(nlohmann_json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
-FetchContent_MakeAvailable(nlohmann_json)
+FetchContent_Declare(frozen URL https://github.com/serge-sans-paille/frozen/archive/refs/heads/master.zip )
+FetchContent_MakeAvailable(frozen)
 
-target_link_libraries(${COMPONENT_LIB} INTERFACE nlohmann_json::nlohmann_json)
+target_include_directories(${COMPONENT_LIB} INTERFACE "include")
+target_link_libraries(${COMPONENT_LIB} INTERFACE frozen::frozen)
