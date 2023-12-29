@@ -3,6 +3,9 @@ dependencies:
   ## Required IDF version
   idf:
     version: ">=5.1.0"
+
+  SmartLeds:
+    git: https://github.com/RoboticsBrno/SmartLeds.git
   # # Put list of dependencies here
   # # For components maintained by Espressif:
   # component: "~1.0.0"

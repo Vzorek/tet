@@ -38,9 +38,16 @@ consteval auto makeSchema(const std::tuple<Commands...>& commands, const std::tu
         + "}";
 }
 
+template <typename Tuple, std::size_t... Is>
+constexpr auto makeFrozenMapImpl(const Tuple& tuple, std::index_sequence<Is...>) {
+    return frozen::unordered_map<frozen::string, Callback<State>, std::tuple_size_v<Tuple>> {
+        std::make_pair(frozen::string(std::get<Is>(tuple).identifier), std::get<Is>(tuple).callback)... ,
+    };
+}
+
 template <HW::State State, typename... Commands>
 constexpr frozen::unordered_map<frozen::string, Callback<State>, sizeof...(Commands)> makeFrozenMap(const std::tuple<Commands...>& commands) {
-    return  { std::make_pair(frozen::string(std::get<Commands>(commands).identifier), std::get<Commands>(commands).callback)... };
+    return makeFrozenMapImpl(commands, std::index_sequence_for<Commands...>{});
 }
 
 using namespace std::string_literals;
@@ -64,7 +71,7 @@ private:
     static constexpr MQTT::QOS s_qos = MQTT::QOS::ExactlyOnce;
 
     const std::string m_id;
-    const std::string m_definitionString;
+    const std::string_view m_definitionString;
 
     const frozen::unordered_map<frozen::string, Callback, t_commandCount> m_callbacks;
 
@@ -76,6 +83,11 @@ private:
 
         std::string_view message(event->data, event->data_len);
         std::string_view topic(event->topic, event->topic_len);
+
+        if (topic != s_topicPrefix + m_id + s_commandTopic) {
+            ESP_LOGE(s_tag, "Received message on invalid topic %.*s", event->topic_len, event->topic);
+            return;
+        }
 
         nlohmann::json json = nlohmann::json::parse(message);
 
@@ -106,7 +118,7 @@ private:
             ESP_LOGE(s_tag, "No data in JSON");
             return;
         }
-        _command->second(m_manager->get(), json["data"]);
+        m_manager->apply(_command->second(m_manager->get(), json["data"]));
     }
 
     void onDisconnect(esp_mqtt_event_handle_t const event) const {
@@ -116,7 +128,7 @@ private:
     void onConnected(esp_mqtt_event_handle_t const event) {
         ESP_LOGI(s_tag, "Connected");
         m_mqtt->subscribe(s_topicPrefix + m_id + s_commandTopic, s_qos);
-        m_mqtt->publish(s_topicPrefix + m_id, m_definitionString, s_qos);
+        m_mqtt->publish(s_topicPrefix + m_id, m_definitionString, s_qos, true);
     }
 
 public:
@@ -125,7 +137,7 @@ public:
         const std::string_view& definitionString,
         const frozen::unordered_map<frozen::string, Callback, t_commandCount>& callbacks)
         : m_id(id)
-        , m_definitionString(std::string(definitionString))
+        , m_definitionString(definitionString)
         , m_callbacks(callbacks) {
     }
 

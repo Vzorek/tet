@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fconcepts-diagnostics-depth=4 -std=c++23")
+set(EXTRA_COMPONENT_DIRS "../../components")
+
+add_compile_definitions(LANTERN)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(fw)

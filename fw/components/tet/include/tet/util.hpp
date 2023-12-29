@@ -37,4 +37,15 @@ consteval auto encodeMultiple(const std::tuple<Properties...>& properties) noexc
     }
 }
 
+template <std::size_t N>
+consteval fixed_string<N> to_string(int value) {
+    if (value < 0)
+        return "-" + to_string<N - 1>(-value);
+    
+    if (value < 10)
+        return fixed_string<1>(1, '0' + value);
+
+    return to_string<N - 1>(value / 10) + fixed_string<N>(1, '0' + value % 10);
+}
+
 } // namespace tet

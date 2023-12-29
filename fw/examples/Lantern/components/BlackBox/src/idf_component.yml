@@ -1,0 +1,9 @@
+## IDF Component Manager Manifest File
+dependencies:
+  ## Required IDF version
+  idf:
+    version: ">=5.1.0"
+  
+  SmartLeds:
+    git: https://github.com/RoboticsBrno/SmartLeds.git
+    version: v3.1.2

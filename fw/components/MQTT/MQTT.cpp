@@ -78,15 +78,15 @@ Client::Client(const Config& config)
     });
 
     m_dispatcher.appendListener(Event::Id::Subscribed, [this](auto event) {
-        ESP_LOGI(s_tag, "MQTT subscribed");
+        ESP_LOGI(s_tag, "MQTT subscribed to %.*s", event->topic_len, event->topic);
     });
 
     m_dispatcher.appendListener(Event::Id::Unsubscribed, [this](auto event) {
-        ESP_LOGI(s_tag, "MQTT unsubscribed");
+        ESP_LOGI(s_tag, "MQTT unsubscribed from %.*s", event->topic_len, event->topic);
     });
 
     m_dispatcher.appendListener(Event::Id::Published, [this](auto event) {
-        ESP_LOGI(s_tag, "MQTT published");
+        ESP_LOGI(s_tag, "MQTT published to %.*s", event->topic_len, event->topic);
     });
 
     m_dispatcher.appendListener(Event::Id::Data, [this](auto event) {
@@ -128,6 +128,7 @@ void Client::subscribe(std::string_view topic, QOS qos) {
     int ret = esp_mqtt_client_subscribe(m_client, topic.data(), static_cast<int>(qos));
     if (ret < 0)
         ESP_LOGE(s_tag, "Error subscribing to topic: %s", topic.data());
+    ESP_LOGI(s_tag, "Subscribed to topic: %s", topic.data());
 }
 
 Client::Handle Client::subscribe(std::string_view topic, Client::Callback callback, QOS qos) {

@@ -2,8 +2,8 @@
 
 #include "tet/util.hpp"
 
-#include <tuple>
 #include <cstdint>
+#include <tuple>
 
 namespace tet {
 
@@ -23,15 +23,15 @@ struct ArgumentBase {
         , name(name)
         , description(description)
         , required(required) {};
-    
-    template<std::size_t t_indent = 0>
+
+    template <std::size_t t_indent = 0>
     consteval auto encode() const noexcept {
-        return
-            indent<t_indent> + "\"" + name + "\": {\n" +
-            indent<t_indent + 1> + "\"type\": \"" + type + "\",\n" +
-            indent<t_indent + 1> + "\"description\": \"" + description + "\",\n" +
-            indent<t_indent + 1> + "\"required\": " + (required ? " true" : "false") + "\n" +
-            indent<t_indent> + "}";
+        return //
+            indent<t_indent> + "\"" + name + "\": {\n" + //
+            indent<t_indent + 1> + "\"type\": \"" + type + "\",\n" + //
+            indent<t_indent + 1> + "\"description\": \"" + description + "\",\n" + //
+            indent<t_indent + 1> + "\"required\": " + (required ? " true" : "false") + "\n" + //
+            indent<t_indent> + "}"; //
     }
 };
 
@@ -41,7 +41,7 @@ ArgumentBase(const char (&type)[t_typeSize], const char (&name)[t_nameSize],
     const char (&description)[t_descriptionSize], bool required)
     -> ArgumentBase<t_typeSize - 1, t_nameSize - 1, t_descriptionSize - 1>;
 
-template<typename T, std::size_t typeSize, std::size_t nameSize, std::size_t t_descriptionSize>
+template <typename T, std::size_t typeSize, std::size_t nameSize, std::size_t t_descriptionSize>
 concept Argument = std::derived_from<T, ArgumentBase<typeSize, nameSize, t_descriptionSize>>;
 
 // String
@@ -52,7 +52,7 @@ struct String : Base {
         const char (&description)[t_descriptionSize + 1],
         bool required) noexcept
         : Base("string", name, description, required) {};
-    
+
     using Base::encode;
 };
 
@@ -97,22 +97,54 @@ Boolean(const char (&name)[t_nameSize],
     -> Boolean<t_nameSize - 1, t_descriptionSize - 1>;
 
 // Array
-template <std::size_t t_nameSize, std::size_t t_descriptionSize,
-    typename Base = ArgumentBase<sizeof("boolean") - 1, t_nameSize,
-        t_descriptionSize>>
-struct Array : Base {
+template <std::size_t t_nameSize, std::size_t t_descriptionSize>
+using ArrayBase = ArgumentBase<sizeof("array") - 1, t_nameSize, t_descriptionSize>;
+
+template <std::size_t t_nameSize, std::size_t t_descriptionSize, typename Inner>
+struct Array : ArrayBase<t_nameSize, t_descriptionSize> {
     consteval Array(const char (&name)[t_nameSize + 1],
         const char (&description)[t_descriptionSize + 1],
-        bool required) noexcept
-        : Base("boolean", name, description, required) {};
-        
-    using Base::encode;
+        bool required, Inner inner,
+        std::size_t minLength = 0,
+        std::size_t maxLength = std::numeric_limits<int>::max) noexcept
+        : ArrayBase<t_nameSize, t_descriptionSize>("array", name, description, required)
+        , inner(inner)
+        , minLength(minLength)
+        , maxLength(maxLength) {};
+
+    const Inner inner;
+    const std::size_t minLength;
+    const std::size_t maxLength;
+
+    using ArrayBase<t_nameSize, t_descriptionSize>::name;
+    using ArrayBase<t_nameSize, t_descriptionSize>::type;
+    using ArrayBase<t_nameSize, t_descriptionSize>::description;
+    using ArrayBase<t_nameSize, t_descriptionSize>::required;
+
+    template <std::size_t t_indent = 0>
+    consteval auto encode() const noexcept {
+        return //
+            indent<t_indent> + "\"" + name + "\": {\n" + //
+            indent<t_indent + 1> + "\"type\": \"" + type + "\",\n" + //
+            indent<t_indent + 1> + "\"description\": \"" + description + "\",\n" + //
+            indent<t_indent + 1> + "\"required\": " + (required ? " true" : "false") + ",\n" + //
+            indent<t_indent + 1> + "\"inner\": {\n" + inner.template encode<t_indent + 2>() + //
+            indent<t_indent + 1> + "}\n" + //
+            // indent<t_indent + 1> + "\"minLength\": " + to_string<3>(minLength) + ",\n" + //
+            // indent<t_indent + 1> + "\"maxLength\": " + to_string<3>(maxLength) + "\n" + //
+            indent<t_indent> + "}"; //
+    }
 };
 
-template <std::size_t t_nameSize, std::size_t t_descriptionSize>
-Array(const char (&name)[t_nameSize],
-    const char (&description)[t_descriptionSize], bool required)
-    -> Array<t_nameSize - 1, t_descriptionSize - 1>;
+template <std::size_t t_nameSize, std::size_t t_descriptionSize, typename Inner>
+Array(
+    const char (&name)[t_nameSize],
+    const char (&description)[t_descriptionSize],
+    bool required,
+    Inner inner,
+    std::optional<int> minLength = std::nullopt,
+    std::optional<int> maxLength = std::nullopt)
+    -> Array<t_nameSize - 1, t_descriptionSize - 1, Inner>;
 
 template <std::size_t t_nameSize, std::size_t t_descriptionSize>
 using ObjectBase = ArgumentBase<sizeof("object") - 1, t_nameSize, t_descriptionSize>;
@@ -134,17 +166,16 @@ struct Object : ObjectBase<t_nameSize, t_descriptionSize> {
     using ObjectBase<t_nameSize, t_descriptionSize>::description;
     using ObjectBase<t_nameSize, t_descriptionSize>::required;
 
-    template<std::size_t t_indent = 0>
+    template <std::size_t t_indent = 0>
     consteval auto encode() const noexcept {
-        return
-            indent<t_indent> + "\"" + name + "\": {\n" +
-            indent<t_indent + 1> + "\"type\": \"" + type + "\",\n" +
-            indent<t_indent + 1> + "\"description\": \"" + description + "\",\n" +
-            indent<t_indent + 1> + "\"required\": " + (required ? " true" : "false") + "\n" +
-            indent<t_indent + 1> + "\"properties\": {\n" +
-            encodeMultiple<t_indent + 1, 0>(properties) +
-            indent<t_indent + 1> + "}\n" +
-            indent<t_indent> + "}";
+        return //
+            indent<t_indent> + "\"" + name + "\": {\n" + //
+            indent<t_indent + 1> + "\"type\": \"" + type + "\",\n" + //
+            indent<t_indent + 1> + "\"description\": \"" + description + "\",\n" + //
+            indent<t_indent + 1> + "\"required\": " + (required ? " true" : "false") + ",\n" + //
+            indent<t_indent + 1> + "\"properties\": {\n" + encodeMultiple<t_indent + 1, 0>(properties) + //
+            indent<t_indent + 1> + "}\n" + //
+            indent<t_indent> + "}"; //
     }
 };
 
@@ -154,5 +185,7 @@ Object(const char (&name)[t_nameSize],
     const char (&description)[t_descriptionSize], bool required,
     std::tuple<Properties...> properties)
     -> Object<t_nameSize - 1, t_descriptionSize - 1, Properties...>;
+
+using NoArguments = std::tuple<>;
 
 } // namespace tet
