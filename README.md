@@ -130,6 +130,18 @@ Sending multiple commands at once is also supported using json array, this creat
 ]
 ```
 
+##### Required commands
+
+Each command needs to have at least the following commands:
+- updateState
+    + update state of the device
+    + with one argument of type `RecursiveOptional<StateDefinition>`
+- shutdown
+    + remotely turns of the device
+    + taken no arguments
+
+State should only be update with the `updateState` command, all other commands should only do device/configuration related changes (shutdown, ....)
+
 #### Events
 
 Events are sent to `event_topic` as json object.
@@ -148,14 +160,10 @@ Events are in form of:
 
 #### Configuration
 
-- `configuration_topic`
-    + device specific mqtt topic used for sending configuration to the device
-    + "devices/`<device_id>`/config"
-
 There might be a need to set persistent configuration on the device.
 Specifically for devices that are expected to be offline for long periods of time.
 
-Configuration is sent to `configuration_topic` as json object.
+Configuration is sent to `command_topic` with special command as json object.
 Following configuration options are to be supported:
 - Adding/modifying context variables
 - Registering handlers for events
