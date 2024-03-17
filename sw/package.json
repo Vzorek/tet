@@ -1,0 +1,39 @@
+{
+    "name": "tet",
+    "type": "module",
+    "workspaces": [
+        "gui",
+        "core",
+        "server"
+    ],
+    "private": true,
+    "scripts": {
+        "lint": "npm run lint --workspaces",
+        "lint:fix": "npm run lint:fix --workspaces",
+        "build": "tsc -b tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+        "cli": "npm run build && node server/dist/src/index.js",
+        "gui": "npm run build --workspace=core && npm run build --workspace=gui && npm run preview --workspace=gui",
+        "gui:dev": "npm run build --workspace=core && npm run build --workspace=gui && npm run dev --workspace=gui"
+    },
+    "devDependencies": {
+        "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+        "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
+        "@stylistic/eslint-plugin": "^1.6.2",
+        "@typescript-eslint/eslint-plugin": "^6.21.0",
+        "@typescript-eslint/parser": "^6.21.0",
+        "eslint": "^8.56.0",
+        "eslint-plugin-react": "^7.33.2",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.2.2",
+        "vite-tsconfig-paths": "^4.3.2"
+    },
+    "dependencies": {
+        "async-mqtt": "^2.6.3",
+        "consola": "^3.2.3",
+        "dotenv": "^16.4.5",
+        "quickjs-emscripten": "^0.29.1",
+        "quickjs-emscripten-sync": "^1.5.2",
+        "winston": "^3.12.0"
+    }
+}

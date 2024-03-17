@@ -1,0 +1,22 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": ".",
+        "baseUrl": "./src",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+    },
+    "include": [
+        "**/*.ts",
+    ],
+    "tsc-alias": {
+      "resolveFullPaths": true,
+      "replacers": {
+        "base-url": {
+          "enabled": true,
+        }
+      }
+    },
+}

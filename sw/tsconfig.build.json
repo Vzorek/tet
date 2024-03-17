@@ -1,0 +1,15 @@
+{
+    "extends": "./tsconfig.json",
+    "references": [
+        {
+            "path": "./core"
+        },
+        {
+            "path": "./server"
+        },
+        {
+            "path": "./gui"
+        }
+    ],
+    "files": []
+}

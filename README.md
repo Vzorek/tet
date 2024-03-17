@@ -190,3 +190,130 @@ Commands:
     - unregisters handler for event
 
 Special case of configuration-only event handling is event `on_start` which is called when device starts.
+
+## Main server
+
+Main server is responsible for:
+- running user program
+
+### User program
+
+User program is a piece of JS code that is run on the main server.
+
+#### Example
+
+```typescript
+import { Game } from "tet";
+
+const lucerna = Game.registerDeviceClass({
+    type: "lucerna",
+    events: [
+        {
+            name: "topButtonPressed",
+            args: {}
+        },
+        {
+            name: "doorsPressed",
+            args: {
+                door: {
+                    type: "number",
+                    min: 0,
+                    max: 3
+                }
+            }
+        },
+    ],
+});
+
+lucerna.defineState({
+    beacon: {
+        type: "object",
+        properties: {
+            top: {
+                type: "array",
+                length: 60,
+                element: {
+                    type: "object",
+                    properties: {
+                        r: { type: "number", min: 0, max: 255 },
+                        g: { type: "number", min: 0, max: 255 },
+                        b: { type: "number", min: 0, max: 255 },
+                    }
+                }
+            },
+            sides: {
+                type: "array",
+                length: 4,
+                element: {
+                    type: "array",
+                    length: 15,
+                    element: {
+                        type: "object",
+                        properties: {
+                            r: { type: "number", min: 0, max: 255 },
+                            g: { type: "number", min: 0, max: 255 },
+                            b: { type: "number", min: 0, max: 255 },
+                        }
+                    }
+                }
+            }
+        },
+    },
+    doors: {
+        type: "array",
+        length: 4,
+        element: {
+            type: "boolean"
+        }
+    }
+});
+
+lucerna.on("topButtonPressed", ({instance}) => {
+    Game.log("Button pressed on lucerna " + id);
+    lucerna.state.ledRing[0] = [255, 0, 0];
+    // Updates state gets send to the device at the end if it is different
+});
+
+const doorTimers = [null, null, null, null];
+const doorStates = [0, 0, 0, 0];
+
+function stopTimer(door) {
+    if (doorTimers[door] !== null) {
+        doorStates[door] = 0;
+        clearInterval(doorTimers[door]);
+        doorTimers[door] = null;
+    }
+}
+
+function getTimerTick(instance, door) {
+    return () => {
+        doorStates[door] += 1;
+        if (doorStates[door] === 17) {
+            stopTimer(door);
+        }
+
+        for (let i = 0; i < doorStates[door]; i++) {
+            instance.state.beacon.sides[door][i] = [255, 0, 0];
+        }
+    };
+}
+
+function startTimer(instance, door) {
+    doorTimers[door] = setInterval(getTimerTick(instance, door), 1000);
+}
+
+lucerna.on("doorsPressed", ({instance, door}) => {
+    Game.log("Door " + door + " pressed on lucerna " + id);
+    if (doors[door] === null) {
+        startTimer(instance, door);
+    }
+});
+
+// Linking against a "device tree" like setup
+lucerna.link(["lucerna1", "lucerna2"])
+
+Game.on("start", () => {
+    Game.log("Game started");
+});
+
+```

@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ES2022",
+        "moduleResolution": "node",
+        "lib": [
+            "ESNext",
+            "DOM"
+        ],
+        "composite": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "baseUrl": ".",
+        "outDir": "./dist",
+        "isolatedModules": false,
+        /* Linting */
+        "strict": true
+    },
+    "tsc-alias": {
+      "resolveFullPaths": true,
+      "replacers": {
+        "base-url": {
+          "enabled": false,
+        }
+      }
+    },
+}
