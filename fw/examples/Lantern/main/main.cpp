@@ -2,20 +2,21 @@
 #include "commands.hpp"
 #include "events.hpp"
 
-#include "tet/Client.hpp"
 #include "MQTT.hpp"
+#include "NVS.hpp"
 #include "NetIf.hpp"
 #include "WiFi.hpp"
-#include "NVS.hpp"
+#include "mDNS.hpp"
+#include "tet/Client.hpp"
 
-#include "esp_log.h"
 #include "esp_crt_bundle.h"
+#include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_system.h"
 
 #include <chrono>
-#include <thread>
 #include <iostream>
+#include <thread>
 
 using namespace std::chrono_literals;
 
@@ -71,7 +72,7 @@ std::optional<Network> tryConnect(Networks& networks) {
 void keepConnected(Network network) {
     ESP_LOGI(TAG, "Connecting to AP");
     WiFi& wifi = WiFi::singleton();
-    while (!tryConnect(network));
+    !tryConnect(network);
 
     auto onDisconnected = wifi.on(WIFI_EVENT_STA_DISCONNECTED, [=, &wifi](const wifi_event_sta_disconnected_t* event) {
         ESP_LOGI(TAG, "Disconnected from AP");
@@ -109,6 +110,7 @@ extern "C" void app_main(void) {
     NVS::init();
     NetIf::init();
     WiFi::singleton().init();
+    mDNS::Device mdns("lantern");
     Manager manager;
     BlackBox::Manager::singleton().power().turnOff();
 
@@ -117,10 +119,7 @@ extern "C" void app_main(void) {
     std::string id(17, '\0');
     snprintf(id.data(), id.size() + 1, MACSTR, MAC2STR(mac.data()));
 
-    MQTT::Config mqttConfig = {
-        .host = "mqtt://192.168.155.48:1883",
-    };
-    MQTT::Client mqtt(mqttConfig);
+    std::unique_ptr<MQTT::Client> mqtt = nullptr;
 
     static constexpr auto schema = tet::makeSchema(Commands::all, Events::all);
     std::cout << schema.view() << std::endl;
@@ -128,17 +127,36 @@ extern "C" void app_main(void) {
     using commandCount = std::tuple_size<std::decay_t<decltype(Commands::all)>>;
     tet::Client<State, Manager, commandCount::value> client(id, schema.view(), callbacks);
 
-    NetIf::on(IP_EVENT_STA_GOT_IP, [&](auto data){
+    std::atomic_flag connected = ATOMIC_FLAG_INIT;
+
+    NetIf::on(IP_EVENT_STA_GOT_IP, [&](auto data) {
         ESP_LOGI(TAG, "Got IP.");
-        mqtt.start();
-        client.init(&mqtt, &manager);
+        connected.test_and_set();
+        connected.notify_all();
     });
 
     keepConnected(std::make_pair("MotoG5G", "haberturdeur"));
 
+    // connected.wait(0);
+
+    std::optional<mDNS::Device::ServiceResult> service;
+    // while (!(service = mdns.queryService("_tet", "_tcp")))
+        std::this_thread::sleep_for(1s);
+
+    // ESP_LOGI(TAG, "Found service: %s:%d", service->hostname.c_str(), service->port);
+    MQTT::Config mqttConfig = {
+        // .host = "mqtt://" + service->ip.toString() + ":" + std::to_string(service->port),
+        .host = "mqtt://8.8.8.8:1883",
+    };
+    ESP_LOGI(TAG, "Connecting to: %s", mqttConfig.host.c_str());
+    mqtt = std::make_unique<MQTT::Client>(mqttConfig);
+    mqtt->start();
+
+    client.init(mqtt.get(), &manager);
+
     while (true) {
         // man.power().checkBatteryLevel(3700, true);
-        
+
         static bool lastState = false;
         bool state = readButton1();
         if (state != lastState) {

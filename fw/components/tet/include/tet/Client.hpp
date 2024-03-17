@@ -78,6 +78,8 @@ private:
     MQTT::Client* m_mqtt = nullptr;
     Manager* m_manager = nullptr;
 
+    std::vector<std::tuple<MQTT::Event::Id, MQTT::Client::Handle>> m_handles;
+
     void onData(esp_mqtt_event_handle_t const event) {
         ESP_LOGI(s_tag, "Received message on topic %.*s", event->topic_len, event->topic);
 
@@ -144,14 +146,26 @@ public:
     void init(MQTT::Client* mqtt, Manager* manager) {
         using namespace MQTT::Event;
         using namespace std::placeholders;
+
+        assert(mqtt != nullptr);
+        assert(manager != nullptr);
+
         m_mqtt = mqtt;
         m_manager = manager;
-        m_mqtt->on(Id::Data, std::bind(&Client::onData, this, _1));
-        m_mqtt->on(Id::Connected, std::bind(&Client::onConnected, this, _1));
-        m_mqtt->on(Id::Disconnected, std::bind(&Client::onDisconnect, this, _1));
+        for (auto [eventId, handle] : m_handles)
+            m_mqtt->removeListener(eventId, handle);
+        m_handles.clear();
+        m_handles = std::vector<std::tuple<Id, MQTT::Client::Handle>> {
+            {Id::Data, m_mqtt->on(Id::Data, std::bind(&Client::onData, this, _1))},
+            {Id::Connected, m_mqtt->on(Id::Connected, std::bind(&Client::onConnected, this, _1))},
+            {Id::Disconnected, m_mqtt->on(Id::Disconnected, std::bind(&Client::onDisconnect, this, _1))},
+        };
     }
 
-    ~Client() = default;
+    ~Client() {
+        for (auto [eventId, handle] : m_handles)
+            m_mqtt->removeListener(eventId, handle);
+    }
 
     void sendEvent(std::string event, nlohmann::json data) {
         m_mqtt->publish(s_topicPrefix + m_id + s_eventTopic + event, data.dump(), s_qos);

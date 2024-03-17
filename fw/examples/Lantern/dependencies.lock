@@ -6,11 +6,17 @@ dependencies:
       path: .
       type: git
     version: ede05a64142a75e71d7dcd4a321e045ea53e0c5a
+  espressif/mDNS:
+    component_hash: d96d277207c4fec77ec290b7a8b0ca4043e10f407df0ff6aa52e54a94f0c54a5
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.2.4
   idf:
     component_hash: null
     source:
       type: idf
-    version: 5.2.0
-manifest_hash: 548f4bdcfc186638ceb0105d1e191a59260ac4410ee0ddbd26a7415f28af1d9b
+    version: 5.3.0
+manifest_hash: b8c6e74b62e7f9bf9cff8e03ee07b48e9824111f5696eb03f6b3e1d31a18c3b6
 target: esp32
 version: 1.0.0

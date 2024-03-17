@@ -3,7 +3,7 @@
 #include "mqtt_client.h"
 
 #include <optional>
-#include <string_view>
+#include <string>
 #include <variant>
 
 namespace MQTT {
@@ -57,14 +57,14 @@ struct UseGlobalStore {};
 using BundleAttacher = esp_err_t (*)(void* conf);
 
 struct Config {
-    std::string_view host;
-    std::optional<std::string_view> user = std::nullopt;
-    std::optional<std::string_view> password = std::nullopt;
-    std::variant<NoCertificate, std::string_view, BundleAttacher, UseGlobalStore> serverCertificate = NoCertificate{};
-    std::optional<std::string_view> clientCertificate = std::nullopt;
-    std::optional<std::string_view> clientKey = std::nullopt;
+    std::string host;
+    std::optional<std::string> user = std::nullopt;
+    std::optional<std::string> password = std::nullopt;
+    std::variant<NoCertificate, std::string, BundleAttacher, UseGlobalStore> serverCertificate = NoCertificate{};
+    std::optional<std::string> clientCertificate = std::nullopt;
+    std::optional<std::string> clientKey = std::nullopt;
     std::optional<Message> will = std::nullopt;
-    std::optional<std::string_view> clientId = std::nullopt;
+    std::optional<std::string> clientId = std::nullopt;
 };
 
 } // namespace MQTT
