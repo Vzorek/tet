@@ -4,6 +4,7 @@ import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfil
 import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
 import wasm from 'vite-plugin-wasm';
+import inject from '@rollup/plugin-inject';
 
 export default defineConfig({
     resolve: {
@@ -37,9 +38,19 @@ export default defineConfig({
     },
     build: {
         rollupOptions: {
-            plugins: [nodePolyfills()],
+            plugins: [
+                nodePolyfills({
+                }),
+                inject({
+                    Buffer: ['buffer', 'Buffer'],
+                    process: ['process'],
+                }),
+            ],
         },
         target: 'esnext',
+        outDir: 'dist',
+        assetsInlineLimit: 0,
+        minify: false,
     },
     assetsInclude: [
         '@tet/core/dist/src/server/workerScript.js',

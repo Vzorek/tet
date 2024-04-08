@@ -15,12 +15,14 @@ export class WebWorker implements IWorker {
 
     onMessage(callback: (message: unknown) => void): void {
         this.worker.addEventListener('message', event => {
+            event.preventDefault();
             callback(event.data);
         });
     }
 
     onError(callback: (error: Error) => void): void {
         this.worker.addEventListener('error', event => {
+            event.preventDefault();
             callback(new Error(event.message));
         });
     }

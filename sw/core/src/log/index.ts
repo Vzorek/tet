@@ -5,7 +5,7 @@ const nodeMode: 'production' | 'development' | undefined = process.env.NODE_ENV 
 
 const isProd = viteMode === 'production' || nodeMode === 'production';
 
-consola.level = isProd ? 1 : 999;
+consola.level = isProd ? 999 : 999;
 
 function createLoggerInstance(tag: string) {
     return consola.withTag(tag);
