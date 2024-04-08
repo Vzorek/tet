@@ -157,49 +157,49 @@ export function array<C extends Any>(item: C, name: string): ArrayC<C> {
     return new ArrayType(name, item);
 }
 
-export class FixedSizeArrayType<C extends Any, N extends number, T = any> extends Type<T> { // eslint-disable-line @typescript-eslint/no-explicit-any
-    readonly _tag = 'FixedSizeArrayType' as const;
+// export class FixedSizeArrayType<C extends Any, N extends number, T = any> extends Type<T> { // eslint-disable-line @typescript-eslint/no-explicit-any
+//     readonly _tag = 'FixedSizeArrayType' as const;
 
-    constructor(
-        name: string,
-        readonly type: C,
-        readonly size: N,
-        readonly defaultValue: T = FixedSizeArrayType.createDefaultValues(type, size) as unknown as T,
-    ) {
-        super(name);
-    }
+//     constructor(
+//         name: string,
+//         readonly type: C,
+//         readonly size: N,
+//         readonly defaultValue: T = FixedSizeArrayType.createDefaultValues(type, size) as unknown as T,
+//     ) {
+//         super(name);
+//     }
 
-    static createDefaultValues<C extends Any, N extends number>(item: C, size: N): TypeOf<C>[] {
-        const result: TypeOf<C>[] = [];
-        for (let i = 0; i < size; i++) {
-            result.push(item.createDefault());
-        }
-        return result;
-    }
+//     static createDefaultValues<C extends Any, N extends number>(item: C, size: N): TypeOf<C>[] {
+//         const result: TypeOf<C>[] = [];
+//         for (let i = 0; i < size; i++) {
+//             result.push(item.createDefault());
+//         }
+//         return result;
+//     }
 
-    createDefault(): T {
-        return this.defaultValue;
-    }
-}
+//     createDefault(): T {
+//         return this.defaultValue;
+//     }
+// }
 
-export interface FixedSizeArrayC<C extends Any, N extends number>
-    extends FixedSizeArrayType<C, N, FixedSizeArray<TypeOf<C>, N>> { };
+// export interface FixedSizeArrayC<C extends Any, N extends number>
+//     extends FixedSizeArrayType<C, N, FixedSizeArray<TypeOf<C>, N>> { };
 
-export function fixedSizeArray<C extends Any, N extends number>(item: C, size: N, name: string): FixedSizeArrayC<C, N> {
-    return new FixedSizeArrayType(name, item, size);
-}
+// export function fixedSizeArray<C extends Any, N extends number>(item: C, size: N, name: string): FixedSizeArrayC<C, N> {
+//     return new FixedSizeArrayType(name, item, size);
+// }
 
-type Shift<A extends Array<any>> = // eslint-disable-line @typescript-eslint/no-explicit-any
-    ((...args: A) => void) extends ((...args: [A[0], ...infer R]) => void) ? R : never;
+// type Shift<A extends Array<any>> = // eslint-disable-line @typescript-eslint/no-explicit-any
+//     ((...args: A) => void) extends ((...args: [A[0], ...infer R]) => void) ? R : never;
 
-type GrowExpRev<A extends Array<any>, N extends number, P extends Array<Array<any>>> = A['length'] extends N ? A : { // eslint-disable-line @typescript-eslint/no-explicit-any
-    0: GrowExpRev<[...A, ...P[0]], N, P>,
-    1: GrowExpRev<A, N, Shift<P>>
-}[[...A, ...P[0]][N] extends undefined ? 0 : 1];
+// type GrowExpRev<A extends Array<any>, N extends number, P extends Array<Array<any>>> = A['length'] extends N ? A : { // eslint-disable-line @typescript-eslint/no-explicit-any
+//     0: GrowExpRev<[...A, ...P[0]], N, P>,
+//     1: GrowExpRev<A, N, Shift<P>>
+// }[[...A, ...P[0]][N] extends undefined ? 0 : 1];
 
-type GrowExp<A extends Array<any>, N extends number, P extends Array<Array<any>>> = A['length'] extends N ? A : { // eslint-disable-line @typescript-eslint/no-explicit-any
-    0: GrowExp<[...A, ...A], N, [A, ...P]>,
-    1: GrowExpRev<A, N, P>
-}[[...A, ...A][N] extends undefined ? 0 : 1];
+// type GrowExp<A extends Array<any>, N extends number, P extends Array<Array<any>>> = A['length'] extends N ? A : { // eslint-disable-line @typescript-eslint/no-explicit-any
+//     0: GrowExp<[...A, ...A], N, [A, ...P]>,
+//     1: GrowExpRev<A, N, P>
+// }[[...A, ...A][N] extends undefined ? 0 : 1];
 
-export type FixedSizeArray<T, N extends number> = N extends 0 ? [] : N extends 1 ? [T] : GrowExp<[T, T], N, [[T]]>;
+// export type FixedSizeArray<T, N extends number> = N extends 0 ? [] : N extends 1 ? [T] : GrowExp<[T, T], N, [[T]]>;

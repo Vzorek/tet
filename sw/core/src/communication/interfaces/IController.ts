@@ -1,14 +1,14 @@
 import { TypedEventEmitter } from '../../utils/TypedEventEmitter.js';
-import { IEvent, IHello, IMessage } from '../Device.js';
-import { IRawMessage } from '../Device.js';
+import { type Event, type Hello, type Message } from '../definitions.js';
+import { type RawMessage } from '../definitions.js';
 
 export type ControllerEventCallbacks = {
     connect: () => void;
     disconnect: () => void;
-    rawMessage: (msg: IRawMessage) => void;
-    message: (msg: IMessage) => void;
-    hello: (msg: IHello) => void;
-    event: (msg: IEvent) => void;
+    rawMessage: (msg: RawMessage) => void;
+    message: (msg: Message) => void;
+    hello: (msg: Hello) => void;
+    event: (msg: Event) => void;
 };
 
 export type IController = TypedEventEmitter<ControllerEventCallbacks> & {

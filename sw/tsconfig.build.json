@@ -7,9 +7,6 @@
         {
             "path": "./server"
         },
-        {
-            "path": "./gui"
-        }
     ],
     "files": []
 }

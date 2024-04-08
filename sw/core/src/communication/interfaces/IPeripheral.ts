@@ -1,13 +1,13 @@
 import { TypedEventEmitter } from '../../utils/TypedEventEmitter.js';
-import { ICommand, IMessage } from '../Device.js';
-import { IRawMessage } from '../Device.js';
+import { type Command, type Message } from '../definitions.js';
+import { type RawMessage } from '../definitions.js';
 
 export type PeripheralEventCallbacks = {
     connect: () => void;
     disconnect: () => void;
-    rawMessage: (msg: IRawMessage) => void;
-    message: (msg: IMessage) => void;
-    command: (msg: ICommand) => void;
+    rawMessage: (msg: RawMessage) => void;
+    message: (msg: Message) => void;
+    command: (msg: Command) => void;
 };
 
 export type IPeripheral = TypedEventEmitter<PeripheralEventCallbacks> & {

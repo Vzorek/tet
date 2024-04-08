@@ -1,4 +1,4 @@
-import { IRawMessage } from '../Device.js';
+import { type RawMessage } from '../definitions.js';
 import { TypedEventEmitter } from '../../utils/TypedEventEmitter.js';
 
 export type ConnectionEventCallbacks = {
@@ -16,7 +16,7 @@ export type ConnectionEventCallbacks = {
     /**
      * @brief A raw message has been received
      */
-    message: (msg: IRawMessage) => void;
+    message: (msg: RawMessage) => void;
 };
 
 export interface IConnection extends TypedEventEmitter<ConnectionEventCallbacks> {

@@ -1,0 +1,28 @@
+{
+    "name": "@tet/controller",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+        "test": "jest"
+    },
+    "dependencies": {
+        "events": "^3.3.0",
+        "io-ts": "^2.2.21",
+        "mqtt": "^5.3.5",
+        "@tet/core": "^0.0.0",
+        "@tet/devices": "^0.0.0"
+    },
+    "devDependencies": {
+        "@jest/globals": "^29.7.0",
+        "@stylistic/eslint-plugin": "^1.6.2",
+        "@typescript-eslint/eslint-plugin": "^6.21.0",
+        "@typescript-eslint/parser": "^6.21.0",
+        "eslint": "^8.56.0",
+        "ts-jest": "^29.1.2",
+        "typed-emitter": "^2.1.0",
+        "typescript": "^5.2.2"
+    }
+}

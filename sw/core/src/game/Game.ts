@@ -1,4 +1,4 @@
-import { IEvent } from '../communication/index.js';
+import { type Event } from '../communication/index.js';
 import { TypedEventEmitter } from '../utils/TypedEventEmitter.js';
 import { DeviceClassEventMap, IDevice, IDeviceClass } from './DeviceClass.js';
 import { Type } from './Type.js';
@@ -132,7 +132,7 @@ export class Game extends TypedEventEmitter<GameEvents> {
         return out;
     }
 
-    receiveEvent(event: IEvent) {
+    receiveEvent(event: Event) {
         this.#devices.get(event.sourceId)?.deviceClass.emit(event.event, event.sourceId, event.data);
     }
 };

@@ -1,6 +1,6 @@
 import { TypedEventEmitter } from '../utils/TypedEventEmitter.js';
 import { IConnection } from './interfaces/IConnection.js';
-import { DeviceDefinitions, ICommand, IEvent, IHello, IMessage, IRawMessage } from './Device.js';
+import { type DeviceDefinition, command, event, hello, type Message, type RawMessage } from './definitions.js';
 
 import * as t from 'io-ts';
 import { PathReporter } from 'io-ts/lib/PathReporter.js';
@@ -8,6 +8,9 @@ import { pipe } from 'fp-ts/lib/function.js';
 import * as E from 'fp-ts/lib/Either.js';
 import { ClientEventCallbacks, IClient } from './interfaces/IClient.js';
 import { createLogger } from '../log/index.js';
+import { MockConnection } from './MockConnection.js';
+import { MQTTConnection } from './MQTTConnection.js';
+import { IClientOptions } from 'async-mqtt';
 
 const logger = createLogger('Client');
 
@@ -24,16 +27,17 @@ function parseTopic(topic: string): E.Either<Error, { id: string, type: 'device'
 }
 
 function decodePayload<T, O, I>(decoder: t.Type<T, O, I>, input: I): E.Either<Error, T> {
+    logger.info(input);
     return pipe(
         decoder.decode(input),
         E.mapLeft(errors => new Error(PathReporter.report(E.left(errors)).join('\n'))),
     );
 }
 
-function parseMessage(msg: IRawMessage): E.Either<Error, IMessage> {
+function parseMessage(msg: RawMessage): E.Either<Error, Message> {
     return pipe(
         parseTopic(msg.topic),
-        E.chain((topicInfo): E.Either<Error, IMessage> => {
+        E.chain((topicInfo): E.Either<Error, Message> => {
             let payload;
             try {
                 payload = JSON.parse(msg.payload);
@@ -43,11 +47,11 @@ function parseMessage(msg: IRawMessage): E.Either<Error, IMessage> {
 
             switch (topicInfo.type) {
             case 'device':
-                return decodePayload(IHello, { ...payload, type: 'hello', sourceId: topicInfo.id });
+                return decodePayload(hello, { ...payload, type: 'hello', sourceId: topicInfo.id });
             case 'command':
-                return decodePayload(ICommand, { ...payload, type: 'command', targetId: topicInfo.id });
+                return decodePayload(command, { ...payload, type: 'command', targetId: topicInfo.id });
             case 'event':
-                return decodePayload(IEvent, { ...payload, type: 'event', sourceId: topicInfo.id });
+                return decodePayload(event, { ...payload, type: 'event', sourceId: topicInfo.id });
             default:
                 return E.left(new Error(`Unknown message type: ${topicInfo.type}`));
             }
@@ -55,14 +59,14 @@ function parseMessage(msg: IRawMessage): E.Either<Error, IMessage> {
     );
 }
 
-export class Client<Connection extends IConnection> extends TypedEventEmitter<ClientEventCallbacks> implements IClient {
-    private connection: Connection;
+export class Client extends TypedEventEmitter<ClientEventCallbacks> implements IClient {
+    private connection: IConnection;
 
     private static getDeviceTopic(deviceId: string) { return `tet/devices/${deviceId}`; }
     private static getCommandTopic(deviceId: string) { return `${this.getDeviceTopic(deviceId)}/commands`; }
     private static getEventTopic(deviceId: string) { return `${this.getDeviceTopic(deviceId)}/events`; }
 
-    private onMessage(msg: IRawMessage) {
+    private onMessage(msg: RawMessage) {
         logger.debug(`Received message: ${msg.topic}: ${msg.payload}`);
         this.emit('rawMessage', msg);
 
@@ -88,13 +92,21 @@ export class Client<Connection extends IConnection> extends TypedEventEmitter<Cl
         }
     }
 
-    public constructor(connection: Connection) {
+    constructor(connection: IConnection) {
         super();
         this.connection = connection;
 
         this.connection.on('connect', () => { this.emit('connect'); });
         this.connection.on('disconnect', () => { this.emit('disconnect'); });
         this.connection.on('message', this.onMessage.bind(this));
+    }
+
+    static createMock(): Client {
+        return new Client(new MockConnection());
+    }
+
+    static createMqtt(url: string, options?: IClientOptions): Client {
+        return new Client(new MQTTConnection(url, options));
     }
 
     async connect(): Promise<void> {
@@ -125,7 +137,7 @@ export class Client<Connection extends IConnection> extends TypedEventEmitter<Cl
         await this.connection.send(Client.getEventTopic(sourceId), JSON.stringify(msg));
     }
 
-    async sendHello(sourceId: string, definitions: DeviceDefinitions): Promise<void> {
+    async sendHello(sourceId: string, definitions: DeviceDefinition): Promise<void> {
         const msg = {
             definitions,
         };
@@ -142,5 +154,16 @@ export class Client<Connection extends IConnection> extends TypedEventEmitter<Cl
 
     async subscribeToEvents(deviceId: string): Promise<void> {
         this.connection.subscribe(Client.getEventTopic(deviceId));
+    }
+
+    async asyncDispose() {
+        try {
+            await this.connection.disconnect();
+        } catch {
+        }
+    }
+
+    [Symbol.asyncDispose]() {
+        return this.asyncDispose();
     }
 }

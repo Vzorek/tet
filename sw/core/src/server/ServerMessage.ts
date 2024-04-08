@@ -1,4 +1,4 @@
-import { IEvent } from '../communication/index.js';
+import { type Event } from '../communication/index.js';
 
 export type Start = {
     type: 'start',
@@ -19,7 +19,7 @@ export type RunScript = {
 
 export type GameEvent = {
     type: 'event',
-    event: IEvent,
+    event: Event,
 };
 
 export type ServerMessage = Start | Pause | Reset | RunScript | GameEvent;

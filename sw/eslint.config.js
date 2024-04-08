@@ -28,7 +28,11 @@ export default [
             '@stylistic/indent': ['error', 4, { SwitchCase: 0 }],
             '@stylistic/quotes': ['error', 'single'],
             '@stylistic/semi': ['error', 'always'],
-            '@stylistic/space-before-function-paren': ['error', 'never'],
+            '@stylistic/space-before-function-paren': ['error', {
+                anonymous: 'never',
+                named: 'never',
+                asyncArrow: 'always',
+            }],
             '@stylistic/comma-dangle': ['error', 'always-multiline'],
             '@stylistic/no-trailing-spaces': ['error'],
             '@stylistic/object-curly-spacing': ['error', 'always'],

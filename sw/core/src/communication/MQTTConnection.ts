@@ -9,10 +9,12 @@ const logger = createLogger('MQTTConnection');
 export class MQTTConnection extends TypedEventEmitter<ConnectionEventCallbacks> implements IConnection {
     private client: MQTT.AsyncClient | null = null;
     private host: string;
+    private options?: MQTT.IClientOptions;
 
-    constructor(host: string) {
+    constructor(host: string, options?: MQTT.IClientOptions) {
         super();
         this.host = host;
+        this.options = options;
     }
 
     async connect(): Promise<void> {
@@ -21,7 +23,7 @@ export class MQTTConnection extends TypedEventEmitter<ConnectionEventCallbacks> 
 
         logger.info('Connecting to MQTT broker');
 
-        this.client = await MQTT.connectAsync(this.host);
+        this.client = await MQTT.connectAsync(this.host, this.options);
         this.client.on('connect', () => {
             this.emit('connect');
             logger.info('Connected to MQTT broker');

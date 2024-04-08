@@ -1,0 +1,31 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": ".",
+        "baseUrl": "./src",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "paths": {
+            "@tet/core": ["../core/dist/index.js"],
+        },
+    },
+    "include": [
+        "./src/**/*.ts",
+        "./tests/**/*test..ts",
+    ],
+    "references": [
+        {
+            "path": "../core",
+        }
+    ],
+    "tsc-alias": {
+        "resolveFullPaths": true,
+        "replacers": {
+          "base-url": {
+            "enabled": false,
+          }
+        }
+      },
+}

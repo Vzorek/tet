@@ -1,0 +1,17 @@
+{
+    "name": "@tet/devices",
+    "version": "0.0.0",
+
+    "module": "dist/src/index.js",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
+    "type": "module",
+
+    "dependencies": {
+        "@tet/core": "0.0.0"
+    },
+
+    "scripts": {
+        "build": "tsc"
+    }
+}

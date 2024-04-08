@@ -1,5 +1,5 @@
 import { createLogger } from '../log/index.js';
-import { Client, DeviceDefinitions, ICommand, IConnection, IEvent, IHello } from '../communication/index.js';
+import { Client, DeviceDefinition, type Command, type Event, type Hello } from '../communication/index.js';
 import { LogicError, NotImplementedError } from '../errors/index.js';
 import { IWorker, createWorker } from '../worker/index.js';
 import * as SM from './ServerMessage.js';
@@ -18,29 +18,29 @@ const logger = createLogger('Server');
 //     time: number,
 // }
 
-interface StartGame extends ICommand {
+interface StartGame extends Command {
     command: 'startGame',
     data: null,
 };
 
-interface PauseGame extends ICommand {
+interface PauseGame extends Command {
     command: 'pauseGame',
     data: null,
 };
 
-interface ResetGame extends ICommand {
+interface ResetGame extends Command {
     command: 'resetGame',
     data: null,
 };
 
-interface UploadGameCode extends ICommand {
+interface UploadGameCode extends Command {
     command: 'uploadGameCode',
     data: string,
 };
 
 type ServerCommand = StartGame | PauseGame | ResetGame | UploadGameCode;
 
-function isServerCommand(command: ICommand): command is ServerCommand {
+function isServerCommand(command: Command): command is ServerCommand {
     return command.targetId === Server.ServerId;
 }
 
@@ -52,12 +52,12 @@ enum State {
     GamePaused = 'paused',
 }
 
-export class Server<Connection extends IConnection> {
+export class Server {
     static readonly ServerId = '__server__';
-    private _client: Client<Connection>;
+    private _client: Client;
     private _state: State = State.Unititialized;
 
-    private _devices: Map<string, DeviceDefinitions> = new Map();
+    private _devices: Map<string, DeviceDefinition> = new Map();
 
     private _gameCode: string | null = null;
     private _worker: IWorker | null = null;
@@ -67,11 +67,11 @@ export class Server<Connection extends IConnection> {
     get gameInProgress(): boolean { return this.running || this.paused; }
     get connected(): boolean { return this._state !== State.Unititialized && this._state !== State.Connecting; }
 
-    constructor(client: Client<Connection>) {
+    constructor(client: Client) {
         this._client = client;
     }
 
-    async init(): Promise<void> {
+    async init(workerScriptURL: string = './core/dist/src/server/workerScript.js'): Promise<void> {
         logger.info('Initializing server');
         if (this._state !== State.Unititialized)
             throw new LogicError('Server already initialized');
@@ -86,7 +86,7 @@ export class Server<Connection extends IConnection> {
         await this._client.subscribeToCommands(Server.ServerId);
 
         logger.verbose('Creating worker');
-        this._worker = await createWorker('./core/dist/src/server/workerScript.js');
+        this._worker = await createWorker(workerScriptURL);
         this._worker.onMessage(msg => this.handleWorkerMessage(msg));
         this._worker.onError(err => this.reportError(err));
 
@@ -97,7 +97,7 @@ export class Server<Connection extends IConnection> {
         if (msg instanceof Error)
             this.reportError(msg);
         else
-            console.log('Received message from worker:', msg);
+            logger.info('Received message from worker:', msg);
     }
 
     async deinit(): Promise<void> {
@@ -175,7 +175,7 @@ export class Server<Connection extends IConnection> {
         this._client.on('event', msg => this.handleEvent(msg));
     }
 
-    private handleCommand(msg: ICommand): void {
+    private handleCommand(msg: Command): void {
         logger.debug(`Received command: ${msg}`);
         if (!isServerCommand(msg))
             throw new LogicError(`Received command for unknown target: ${msg.targetId}`);
@@ -204,7 +204,7 @@ export class Server<Connection extends IConnection> {
         this._worker?.postMessage({ type: 'runScript', script: code });
     }
 
-    private handleEvent(msg: IEvent): void {
+    private handleEvent(msg: Event): void {
         logger.debug(`Received event: ${msg}`);
         if (!this.running)
             return; // Ignore events when not running
@@ -215,7 +215,7 @@ export class Server<Connection extends IConnection> {
             throw new LogicError(`Received event from unknown device: ${msg.sourceId}`);
 
         // Only handle known events
-        const def = device.events.find(e => e.event === msg.event);
+        const def = device.events[msg.event];
         if (!def)
             throw new LogicError(`Received unknown event: ${msg.event}`);
 
@@ -229,14 +229,26 @@ export class Server<Connection extends IConnection> {
     /**
      * Upon receiving a hello message, the server registers the device and subscribes to its events.
      */
-    private handleHello(msg: IHello): void {
+    private handleHello(msg: Hello): void {
         logger.debug(`Received hello: ${msg}`);
         this._devices.set(msg.sourceId, msg.definitions);
         this._client.subscribeToEvents(msg.sourceId);
+        logger.debug(this._devices);
     }
 
     reportError(error: Error): void {
         logger.error(error);
         this._client.sendEvent(Server.ServerId, 'error', error);
+    }
+
+    async asyncDispose(): Promise<void> {
+        try {
+            await this.deinit();
+        } catch (error) {
+        }
+    }
+
+    [Symbol.asyncDispose](): Promise<void> {
+        return this.asyncDispose();
     }
 }

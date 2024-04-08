@@ -95,6 +95,54 @@ Capabilities include:
 + events
 + state object definition
 
+#### State object definition
+
+State object definition is a json schema that describes the state object of the device.
+State object definition is in form of:
+```json
+{
+    "type": "object",
+    "properties": {
+        "property1": {
+            "type": "number",
+            "min": 0,
+            "max": 100
+        },
+        "property2": {
+            "type": "string"
+        }
+    }
+}
+```
+
+#### Standardized definitions
+These are some definitions that are to be used across all devices (it would be useful to keep them consistent across devices):
+
+- rgb
+```
+{
+    "type": "object",
+    "properties": {
+        "r": {
+            "type": "number",
+            "min": 0,
+            "max": 255
+        },
+        "g": {
+            "type": "number",
+            "min": 0,
+            "max": 255
+        },
+        "b": {
+            "type": "number",
+            "min": 0,
+            "max": 255
+        }
+    }
+}
+```
+
+
 #### Commands
 
 Commands are sent to `command_topic` as json object.
@@ -103,7 +151,7 @@ Commands are in form of:
 ```json
 {
     "command": "command_name",
-    "args": {
+    "data": {
         "arg1": "value1",
         "arg2": "value2"
     }
@@ -115,20 +163,24 @@ Sending multiple commands at once is also supported using json array, this creat
 [
     {
         "command": "command_name",
-        "args": {
+        "data": {
             "arg1": "value1",
             "arg2": "value2"
         }
     },
     {
         "command": "command_name2",
-        "args": {
+        "data": {
             "arg1": "value1",
             "arg2": "value2"
         }
     }
 ]
 ```
+
+##### Command data
+
+Command data is defined with json schema.
 
 ##### Required commands
 
@@ -149,10 +201,139 @@ Events are in form of:
 ```json
 {
     "event": "event_name",
-    "args": {
+    "data": {
         "arg1": "value1",
         "arg2": "value2"
     }
+}
+```
+
+##### Event data
+Same as command data and state definition, event data is also defined with json schema.
+
+#### Sample device definitions
+
+##### Lucerna
+```json
+{
+    "type": "lucerna",
+    "events": [
+        {
+            "event": "topButtonPressed",
+            "data": {}
+        },
+        {
+            "event": "doorsPressed",
+            "data": {
+                "door": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 3
+                }
+            }
+        }
+    ],
+    "state": {
+        "type": "object",
+        "properties": {
+            "beacon": {
+                "type": "object",
+                "properties": {
+                    "top": {
+                        "type": "array",
+                        "length": 60,
+                        "element": {
+                            "type": "object",
+                            "properties": {
+                                "r": { "type": "number", "min": 0, "max": 255 },
+                                "g": { "type": "number", "min": 0, "max": 255 },
+                                "b": { "type": "number", "min": 0, "max": 255 }
+                            }
+                        }
+                    },
+                    "sides": {
+                        "type": "array",
+                        "length": 4,
+                        "element": {
+                            "type": "array",
+                            "length": 15,
+                            "element": {
+                                "type": "object",
+                                "properties": {
+                                    "r": { "type": "number", "min": 0, "max": 255 },
+                                    "g": { "type": "number", "min": 0, "max": 255 },
+                                    "b": { "type": "number", "min": 0, "max": 255 }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "doors": {
+                "type": "array",
+                "length": 4,
+                "element": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "commands": [
+        {
+            "name": "updateState",
+            "data": {
+                "state": {
+                    "type": "object",
+                    "properties": {
+                        "beacon": {
+                            "type": "object",
+                            "properties": {
+                                "top": {
+                                    "type": "array",
+                                    "length": 60,
+                                    "element": {
+                                        "type": "object",
+                                        "properties": {
+                                            "r": { "type": "number", "min": 0, "max": 255 },
+                                            "g": { "type": "number", "min": 0, "max": 255 },
+                                            "b": { "type": "number", "min": 0, "max": 255 }
+                                        }
+                                    }
+                                },
+                                "sides": {
+                                    "type": "array",
+                                    "length": 4,
+                                    "element": {
+                                        "type": "array",
+                                        "length": 15,
+                                        "element": {
+                                            "type": "object",
+                                            "properties": {
+                                                "r": { "type": "number", "min": 0, "max": 255 },
+                                                "g": { "type": "number", "min": 0, "max": 255 },
+                                                "b": { "type": "number", "min": 0, "max": 255 }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "doors": {
+                            "type": "array",
+                            "length": 4,
+                            "element": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "shutdown",
+            "data": {}
+        }
+    ]
 }
 ```
 
@@ -196,6 +377,65 @@ Special case of configuration-only event handling is event `on_start` which is c
 Main server is responsible for:
 - running user program
 
+### Server is itself a device
+- Server is a device with type `server`
+- Server has static id `__root__`
+- Server has the following device definition:
+```json
+{
+    "type": "server",
+    "events": [
+        {
+            "event": "gameStarted",
+            "data": {}
+        },
+        {
+            "event": "gameStopped",
+            "data": {}
+        },
+        {
+            "event": "error",
+            "data": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        {
+            "event": "log",
+            "data": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+    ],
+    "state": null,
+    "commands": [
+        {
+            "command": "startGame",
+            "data": {}
+        },
+        {
+            "command": "stopGame",
+            "data": {}
+        },
+        {
+            "command": "restartGame",
+            "data": {}
+        },
+        {
+            "command": "uploadGameCode",
+            "data": {
+                "code": {
+                    "type": "string"
+                }
+            }
+        }
+    ]
+}
+```
+
 ### User program
 
 User program is a piece of JS code that is run on the main server.
@@ -210,11 +450,11 @@ const lucerna = Game.registerDeviceClass({
     events: [
         {
             name: "topButtonPressed",
-            args: {}
+            data: {}
         },
         {
             name: "doorsPressed",
-            args: {
+            data: {
                 door: {
                     type: "number",
                     min: 0,

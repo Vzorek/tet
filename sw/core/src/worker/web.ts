@@ -4,7 +4,9 @@ export class WebWorker implements IWorker {
     private worker: Worker;
 
     constructor(scriptUrl: string) {
-        this.worker = new Worker(scriptUrl);
+        this.worker = new Worker(scriptUrl, {
+            type: 'module',
+        });
     }
 
     postMessage(message: unknown): void {

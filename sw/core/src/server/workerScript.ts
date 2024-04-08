@@ -61,3 +61,6 @@ onMessageFromParent(message => {
         throw new LogicError('Unknown message type');
     }
 });
+
+postMessageToParent('ready');
+logger.info('Worker script started');

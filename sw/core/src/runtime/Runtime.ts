@@ -1,4 +1,6 @@
-import { QuickJSContext, QuickJSWASMModule, getQuickJS } from 'quickjs-emscripten';
+import { QuickJSContext, QuickJSWASMModule } from 'quickjs-emscripten';
+import variant from '@jitl/quickjs-singlefile-browser-release-sync';
+import { newQuickJSWASMModuleFromVariant } from 'quickjs-emscripten-core';
 import { Arena } from 'quickjs-emscripten-sync';
 import * as E from 'fp-ts/lib/Either.js';
 
@@ -9,7 +11,7 @@ export class Runtime {
 
     static async init() {
         if (!Runtime.QuickJS) {
-            Runtime.QuickJS = await getQuickJS();
+            Runtime.QuickJS = await newQuickJSWASMModuleFromVariant(variant);
         }
     }
 
