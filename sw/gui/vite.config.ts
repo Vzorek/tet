@@ -7,6 +7,7 @@ import wasm from 'vite-plugin-wasm';
 import inject from '@rollup/plugin-inject';
 
 export default defineConfig({
+    base: '',
     resolve: {
         alias: {
             url: 'rollup-plugin-node-polyfills/polyfills/url',
@@ -33,7 +34,6 @@ export default defineConfig({
             target: 'esnext',
         },
         include: [
-            '@tet/core/dist/src/server/workerScript.js',
         ],
     },
     build: {
@@ -46,13 +46,17 @@ export default defineConfig({
                     process: ['process'],
                 }),
             ],
+            input: {
+                main: 'index.html',
+                workerScript: '@tet/core/dist/src/server/workerScript.js',
+            },
+            output: {
+                entryFileNames: 'assets/[name].js',
+            },
         },
         target: 'esnext',
         outDir: 'dist',
-        assetsInlineLimit: 0,
-        minify: false,
     },
     assetsInclude: [
-        '@tet/core/dist/src/server/workerScript.js',
     ],
 });

@@ -1,0 +1,40 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main  # Set your default branch here
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+
+    - name: Install dependencies
+      working-directory: sw
+      run: npm install
+
+    - name: Run build script
+      working-directory: sw
+      run: npm run build:all
+
+    - name: Add CNAME
+      working-directory: sw/gui/dist
+      run: echo 'tet.vzorek.com' > CNAME
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: sw/gui/dist
+
