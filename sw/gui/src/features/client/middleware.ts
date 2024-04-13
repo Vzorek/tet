@@ -84,8 +84,11 @@ class Context {
             this.server = new Server(this.client);
 
         this.server = new Server(this.client);
-        const url = (new URL('workerScript.js', import.meta.url)).toString();
-        await this.server.init(url);
+        // This is necessary for some reason
+        const url = import.meta.env.MODE === 'production'
+            ? new URL('workerScript.js', import.meta.url)
+            : new URL('@tet/core/dist/src/server/workerScript.js', import.meta.url);
+        await this.server.init(url.href);
     }
 
     async disconnectMock() {
