@@ -25,11 +25,6 @@ type State = t.TypeOf<typeof State>;
 export type Action = Transform<Actions, 'config'>;
 export type ActionType = Action['type'];
 
-export type SetConnectionType = Actions['setConnectionType'];
-export type SetUrl = Actions['setUrl'];
-export type SetUser = Actions['setUser'];
-export type SetPassword = Actions['setPassword'];
-
 const defaultState: State = {
     currentType: 'mock',
     mqtt: {

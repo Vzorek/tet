@@ -4,7 +4,7 @@ import { Box, ButtonGroup, IconButton, Paper } from '@mui/material';
 import { Add, Home, Remove } from '@mui/icons-material';
 
 import Background from './Background';
-import { State } from '../../../features/store';
+import { State } from '../../features/store';
 import Device from './Device';
 
 type DeviceBoardProperties = Record<string, never>;
@@ -60,9 +60,6 @@ const DeviceBoard: React.FC<DeviceBoardProperties> = ({ }) => {
     };
 
     const { devices } = useSelector((state: State) => state.devices);
-    const handleEvent = (event: unknown) => {
-        console.log(`Device: Event: ${event}`);
-    };
 
     return (
         <>
@@ -113,7 +110,6 @@ const DeviceBoard: React.FC<DeviceBoardProperties> = ({ }) => {
                                         key={device.id}
                                         {...device}
                                         scale={scale}
-                                        handleEvent={handleEvent}
                                     />
                                 );
                             })

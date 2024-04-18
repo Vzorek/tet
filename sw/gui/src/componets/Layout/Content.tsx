@@ -9,7 +9,7 @@ export type Props = {
     children?: React.ReactNode;
 };
 
-const Main: React.FC<Props> = ({ width, children }) => {
+const Content: React.FC<Props> = ({ width, children }) => {
     const theme = useTheme();
 
     return (
@@ -37,4 +37,4 @@ const Main: React.FC<Props> = ({ width, children }) => {
     );
 };
 
-export default Main;
+export default Content;

@@ -1,12 +1,12 @@
 import React, { MouseEventHandler, useEffect, useState } from 'react';
 
-import { DeviceState } from '../../../features/slices/devices';
-import { getDeviceType } from '../../../features/client/middleware';
+import { DeviceState } from '../../features/slices/devices';
+import { getDeviceType } from '../../features/client/middleware';
 import { useDispatch } from 'react-redux';
+import { EventHandler } from '@tet/devices';
 
 type DeviceProperties = DeviceState & {
     scale: number;
-    handleEvent: (event: unknown) => void;
 };
 
 const Device: React.FC<DeviceProperties> = ({
@@ -16,7 +16,6 @@ const Device: React.FC<DeviceProperties> = ({
     position,
     state,
     scale,
-    handleEvent,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [originalPosition, setOriginalPosition] = useState({ x: position[0], y: position[1] });
@@ -61,6 +60,17 @@ const Device: React.FC<DeviceProperties> = ({
             window.removeEventListener('mouseup', handleMouseUp);
         };
     }, [isDragging, dragStart, originalPosition, scale, position, dispatch, id]);
+
+    const handleEvent: EventHandler<Record<string, unknown>> = (event: string, payload: unknown) => {
+        dispatch({
+            type: 'client/sendEvent',
+            payload: {
+                sourceId: id,
+                event,
+                payload,
+            },
+        });
+    };
 
     if (hidden)
         return null;
@@ -126,8 +136,8 @@ const Device: React.FC<DeviceProperties> = ({
                 textAnchor='middle'
             >
                 {id}
-                <tspan x={width / 2} dy={lineHeight} textAnchor='middle'>{type.typeTag}</tspan>
-                <tspan x={width / 2} dy={lineHeight} textAnchor='middle'>{type.fwVersion}</tspan>
+                <tspan x={width / 2} dy={lineHeight} textAnchor='middle'>{type.tag.split('#')[0]}</tspan>
+                <tspan x={width / 2} dy={lineHeight} textAnchor='middle'>{type.tag.split('#')[1]}</tspan>
             </text>
         </g>
     );

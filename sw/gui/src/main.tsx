@@ -3,9 +3,8 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { ThemeProvider } from '@emotion/react';
 import theme from './theme';
-import { router } from './routes';
+import Main from './componets/Main';
 import { Provider as StateProvider } from 'react-redux';
-import { RouterProvider } from 'react-router-dom';
 import store from './features/store';
 const config = store.getState().config;
 
@@ -17,7 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <StateProvider store={store}>
-                <RouterProvider router={router} />
+                <Main />
             </StateProvider>
         </ThemeProvider>
     </React.StrictMode>,

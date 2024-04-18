@@ -14,9 +14,13 @@ export type Actions = {
 
     disconnectionSuccessMQTT: undefined;
 
-    command: Command;
-    event: Event;
-    hello: Hello;
+    sendCommand: Command;
+    sendEvent: Event;
+    sendHello: Hello;
+
+    receiveCommand: Command;
+    receiveEvent: Event;
+    receiveHello: Hello;
 };
 
 export type Action = Transform<Actions, 'client'>;

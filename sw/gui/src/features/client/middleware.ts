@@ -51,8 +51,8 @@ class Context {
         if (this.client === null)
             throw new Error('Client is not connected');
 
-        this.client.on('command', (command: Command) => { this.api.dispatch({ type: 'client/command', payload: command }); });
-        this.client.on('event', (event: Event) => { this.api.dispatch({ type: 'client/event', payload: event }); });
+        this.client.on('command', (command: Command) => { this.api.dispatch({ type: 'client/receiveCommand', payload: command }); });
+        this.client.on('event', (event: Event) => { this.api.dispatch({ type: 'client/receiveEvent', payload: event }); });
         this.client.on('hello', (hello: Hello) => {
             this.api.dispatch({
                 type: 'devices/addDevice', payload: {
@@ -155,6 +155,20 @@ const createConnectionMiddleware = (api: MiddlewareAPI<Dispatch<Action>>) => {
         case 'devices/createDevice':
             await context.createDevice(action.payload.id, action.payload.tag);
             break;
+
+        case 'client/sendEvent': {
+            const { sourceId, event, data } = action.payload;
+            if (context.client !== null)
+                context.client.sendEvent(sourceId, event, data);
+            break;
+        }
+
+        case 'client/sendCommand': {
+            const { targetId, command, data } = action.payload;
+            if (context.client !== null)
+                context.client.sendCommand(targetId, command, data);
+            break;
+        }
 
         default:
             break;

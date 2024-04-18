@@ -3,14 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Button, Box, Container, Dialog, DialogActions, DialogContent, Divider, IconButton, Typography } from '@mui/material';
 import { Add } from '@mui/icons-material';
 
-import { State } from '../../features/store';
-import NavBar from '../../componets/NavBar';
-import Layout from '../../componets/Layout';
-import { routes } from '../index';
+import { State } from '../features/store';
+import NavBar from './NavBar';
+import Layout from './Layout';
 
-import DeviceList, { DeviceListProperties } from './DeviceList';
-import AddDeviceForm from './AddDeviceForm';
+import DeviceList, { DeviceListProperties } from './DeviceList/DeviceList';
+import AddDeviceForm from './DeviceList/AddDeviceForm';
 import DeviceBoard from './DeviceBoard';
+import ControlPanel from './ControlPanel';
 
 const SidebarContent: React.FC<DeviceListProperties> = props => {
     const [isModalOpen, setModalOpen] = useState(false);
@@ -64,10 +64,16 @@ const Devices = () => {
                     minWidth: '20vw',
                     children: <SidebarContent devices={devices} deviceTypes={types} />,
                 },
+                right: {
+                    defaultOpen: false,
+                    variant: 'persistent',
+                    minWidth: '25vw',
+                    children: <ControlPanel />,
+                },
             }}
 
             appBar={{
-                children: <NavBar links={routes} />,
+                children: <NavBar links={[]} />,
             }}
         >
             <DeviceBoard />

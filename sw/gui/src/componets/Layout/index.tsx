@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AppBar from './AppBar';
-import Main from './Main';
+import Content from './Content';
 import Sidebar from './Sidebar';
 
 type SidebarProps = {
@@ -67,9 +67,9 @@ const Layout: React.FC<LayoutProps> = ({
             <AppBar {...appBarProps}>
                 {appBar?.children}
             </AppBar>
-            <Main width={{ left: leftWidth, right: rightWidth }}>
+            <Content width={{ left: leftWidth, right: rightWidth }}>
                 {children}
-            </Main>
+            </Content>
             {left && (
                 <Sidebar
                     open={leftOpen}

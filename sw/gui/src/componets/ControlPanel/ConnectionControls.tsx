@@ -1,44 +1,36 @@
-import { Button, ButtonGroup, Container, Typography, Divider, TextField, Switch, Stack, Box, IconButton, InputAdornment } from '@mui/material';
+import { Button, ButtonGroup, Typography, Divider, TextField, Switch, Stack, IconButton, InputAdornment } from '@mui/material';
 import { FC, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { type State } from '@/features/store';
-import { SetUrl } from '@/features/slices/config';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-
-const Header = () => {
-    return (
-        <Container>
-            <Typography variant='h4'>
-                Game Controls
-            </Typography>
-        </Container>
-    );
-};
 
 const MQTTControls = () => {
     const dispatch = useDispatch();
     const { url, username, password } = useSelector((state: State) => state.config.mqtt);
+    const state = useSelector((state: State) => state.client.state);
     const [showPassword, setShowPassword] = useState(false);
 
     return (
         <>
-            <TextField label='URL' style={{ marginTop: '1em' }} value={url} onChange={event => { dispatch<SetUrl>({ type: 'config/setUrl', payload: event.target.value }); }} />
-            <Box style={{ marginTop: '0.5em' }}>
-                <TextField label='Username (Optional)' value={username} />
-                <TextField label='Password (Optional)' style={{ marginLeft: '0.5em' }} value={password} type={showPassword ? 'text' : 'password'} InputProps={{
-                    endAdornment:
-                        <InputAdornment position="end">
-                            <IconButton
-                                aria-label="toggle password visibility"
-                                onClick={() => setShowPassword(!showPassword)}
-                                onMouseDown={event => { event.preventDefault(); }}
-                                edge="end"
-                            >
-                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                        </InputAdornment>,
-                }} />
-            </Box>
+            <Divider orientation='horizontal' />
+            <TextField label='URL' style={{ marginTop: '1em' }} value={url} onChange={event => { dispatch({ type: 'config/setUrl', payload: event.target.value }); }} />
+            <TextField label='Username (Optional)' value={username} style={{ marginTop: '0.5em' }} />
+            <TextField label='Password (Optional)' value={password} style={{ marginTop: '0.5em' }} type={showPassword ? 'text' : 'password'} InputProps={{
+                endAdornment:
+                    <InputAdornment position="end">
+                        <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={() => setShowPassword(!showPassword)}
+                            onMouseDown={event => { event.preventDefault(); }}
+                            edge="end"
+                        >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                    </InputAdornment>,
+            }} />
+            <ButtonGroup style={{ alignSelf: 'center', marginTop: '1em' }}>
+                <ConnectButton state={state} />
+            </ButtonGroup>
         </>
     );
 };
@@ -94,39 +86,24 @@ const ConnectButton = ({ state }: { state: State['client']['state'] }) => {
     );
 };
 
-const Body: FC = () => {
-    const state = useSelector((state: State) => state.client.state);
+const ConnectionControls: FC = () => {
     const currentType = useSelector((state: State) => state.config.currentType);
     const dispatch = useDispatch();
     const isMock = currentType === 'mock';
     const isMqtt = currentType === 'mqtt';
 
     return (
-        <Stack>
+        <Stack padding='1em'>
             <Typography variant='h6' textAlign='center'>Connection</Typography>
             <Stack direction='row' justifyContent='center'>
                 <Typography display='inline'> Mock </Typography>
                 <Switch checked={isMqtt} onChange={event => dispatch({ type: 'config/setConnectionType', payload: (event.target.checked ? 'mqtt' : 'mock') })} />
                 <Typography display='inline'> MQTT </Typography>
             </Stack>
-            <Divider orientation='horizontal' />
             {isMock && <MockControls />}
             {isMqtt && <MQTTControls />}
-            <ButtonGroup style={{ alignSelf: 'center', marginTop: '1em' }}>
-                <ConnectButton state={state} />
-            </ButtonGroup>
         </Stack>
     );
 };
 
-const GameControls: FC = () => {
-    return (
-        <Container>
-            <Header />
-            <Divider orientation='horizontal' />
-            <Body />
-        </Container>
-    );
-};
-
-export default GameControls;
+export default ConnectionControls;

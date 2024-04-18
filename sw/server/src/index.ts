@@ -46,8 +46,7 @@ await delay(1000);
 
 await client.sendHello('test', {
     initialState: null,
-    typeTag: 'test#0.0.0',
-    fwVersion: '0.0.0',
+    typeTag: 'test_v0.0.0#0.0.0',
     commands: {
         updateState: { type: 'null' },
         shutdown: { type: 'null' },

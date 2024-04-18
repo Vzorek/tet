@@ -1,6 +1,6 @@
 import { createLogger } from '../log/index.js';
 import { Client, DeviceDefinition, type Command, type Event, type Hello } from '../communication/index.js';
-import { LogicError, NotImplementedError } from '../errors/index.js';
+import { LogicError } from '../errors/index.js';
 import { IWorker, createWorker } from '../worker/index.js';
 import * as SM from './ServerMessage.js';
 
@@ -44,28 +44,22 @@ function isServerCommand(command: Command): command is ServerCommand {
     return command.targetId === Server.ServerId;
 }
 
-enum State {
-    Unititialized = 'unititialized',
-    Connecting = 'connecting',
-    Connected = 'connected',
-    GameRunning = 'running',
-    GamePaused = 'paused',
-}
+type State = 'uninitialized' | 'connecting' | 'connected' | 'running' | 'paused';
 
 export class Server {
     static readonly ServerId = '__server__';
     private _client: Client;
-    private _state: State = State.Unititialized;
+    private _state: State = 'uninitialized';
 
     private _devices: Map<string, DeviceDefinition> = new Map();
 
     private _gameCode: string | null = null;
     private _worker: IWorker | null = null;
 
-    get paused(): boolean { return this._state === State.GamePaused; }
-    get running(): boolean { return this._state === State.GameRunning; }
+    get paused(): boolean { return this._state === 'paused'; }
+    get running(): boolean { return this._state === 'running'; }
     get gameInProgress(): boolean { return this.running || this.paused; }
-    get connected(): boolean { return this._state !== State.Unititialized && this._state !== State.Connecting; }
+    get connected(): boolean { return this._state !== 'uninitialized' && this._state !== 'connecting'; }
 
     constructor(client: Client) {
         this._client = client;
@@ -73,14 +67,14 @@ export class Server {
 
     async init(workerScriptURL: string = './core/dist/src/server/workerScript.js'): Promise<void> {
         logger.info('Initializing server');
-        if (this._state !== State.Unititialized)
+        if (this._state !== 'uninitialized')
             throw new LogicError('Server already initialized');
 
         this.registerEventHandlers();
 
         logger.debug('Connecting to broker');
         await this._client.connect();
-        this._state = State.Connected;
+        this._state = 'connected';
 
         await this._client.subscribeToDevices();
         await this._client.subscribeToCommands(Server.ServerId);
@@ -105,20 +99,20 @@ export class Server {
 
         switch (this._state) {
 
-        case State.GamePaused:
-        case State.GameRunning:
+        case 'paused':
+        case 'running':
             logger.debug('Resetting game');
             this.resetGame();
 
-        case State.Connected:
-        case State.Connecting:
+        case 'connected':
+        case 'connecting':
             logger.debug('Disposing of worker');
             await this._worker?.asyncDispose();
             logger.debug('Disconnecting from broker');
             await this._client.disconnect();
             break;
 
-        case State.Unititialized:
+        case 'uninitialized':
             throw new LogicError('Server not initialized');
         }
     }
@@ -135,14 +129,14 @@ export class Server {
             data: this._gameCode,
         });
 
-        this._state = State.GameRunning;
+        this._state = 'running';
     }
 
     pauseGame(): void {
         if (!this.running)
             throw new LogicError('Server not running');
 
-        this._state = State.GamePaused;
+        this._state = 'paused';
         this._worker?.postMessage({
             type: 'pause',
         });
@@ -161,13 +155,13 @@ export class Server {
         logger.debug('Registering event handlers');
         this._client.on('connect', () => {
             logger.info('Connected');
-            if (this._state === State.Connecting)
-                this._state = State.Connected;
+            if (this._state === 'connecting')
+                this._state = 'connected';
         });
 
         this._client.on('disconnect', () => {
             logger.info('Disconnected');
-            throw new NotImplementedError('Handling disconnect');
+            // throw new NotImplementedError('Handling disconnect');
         });
 
         this._client.on('hello', msg => this.handleHello(msg));
@@ -200,11 +194,13 @@ export class Server {
     }
 
     uploadGameCode(code: string) {
+        logger.debug('Uploading game code');
         this._gameCode = code;
         this._worker?.postMessage({ type: 'runScript', script: code });
     }
 
     private handleEvent(msg: Event): void {
+        console.log('Received event:', msg);
         logger.debug(`Received event: ${msg}`);
         if (!this.running)
             return; // Ignore events when not running
