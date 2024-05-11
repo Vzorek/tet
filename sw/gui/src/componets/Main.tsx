@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Button, Box, Container, Dialog, DialogActions, DialogContent, Divider, IconButton, Typography } from '@mui/material';
+import { Box, Container, Divider, IconButton, Typography } from '@mui/material';
 import { Add } from '@mui/icons-material';
 
 import { State } from '../features/store';
@@ -40,14 +40,7 @@ const SidebarContent: React.FC<DeviceListProperties> = props => {
             <Divider />
             <DeviceList {...props} />
 
-            <Dialog open={isModalOpen} onClose={handleCloseModal}>
-                <DialogContent>
-                    <AddDeviceForm {...props} onSubmit={handleAddDevice} />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseModal}>Cancel</Button>
-                </DialogActions>
-            </Dialog>
+            <AddDeviceForm open={isModalOpen} setOpen={setModalOpen} onSubmit={handleAddDevice} />
         </Container>
     );
 };

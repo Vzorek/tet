@@ -2,8 +2,8 @@ import React from 'react';
 import * as t from 'io-ts';
 import { NullSchema, TypeOfMap, codecToSchema, type DeviceDefinition, type EventsDefinition } from '@tet/core';
 
-export type EventHandler<Events> = (event: keyof Events, data: Events[typeof event]) => void;
-export type Renderer<State, Events> = (state: State, onEvent: EventHandler<Events>) => React.ReactNode;
+export type EventHandler<Events extends Record<string, unknown>> = (event: keyof Events, data: Events[typeof event]) => void;
+export type Renderer<State, Events extends Record<string, unknown>> = (state: State, onEvent: EventHandler<Events>) => React.ReactNode;
 
 export interface IDevice<State = any> { // eslint-disable-line @typescript-eslint/no-explicit-any
     readonly state: State;
@@ -11,7 +11,7 @@ export interface IDevice<State = any> { // eslint-disable-line @typescript-eslin
     readonly typeTag: string;
 }
 
-export interface IDeviceType<State = any, Events = any> { // eslint-disable-line @typescript-eslint/no-explicit-any
+export interface IDeviceType<State = any, Events extends Record<string, unknown> = any> { // eslint-disable-line @typescript-eslint/no-explicit-any
     readonly tag: string;
     readonly initialState: State
     readonly definition: DeviceDefinition;
@@ -19,13 +19,16 @@ export interface IDeviceType<State = any, Events = any> { // eslint-disable-line
     readonly createDevice: (id: string) => IDevice<State>;
 }
 
-export function makeDeviceType<StateCodec extends t.Mixed>(
+export function makeDeviceType<
+    StateCodec extends t.Mixed,
+    Events extends Record<string, t.Mixed> = Record<string, t.Mixed>,
+>(
     tag: string,
     stateCodec: StateCodec,
     initialState: t.TypeOf<StateCodec>,
-    events: Record<string, t.Mixed>,
+    events: Events,
     render: Renderer<t.TypeOf<StateCodec>, TypeOfMap<typeof events>>,
-): IDeviceType<StateCodec, typeof events> {
+): IDeviceType<StateCodec, TypeOfMap<typeof events>> {
     if (!stateCodec.is(initialState))
         throw new Error('Invalid initial state');
 

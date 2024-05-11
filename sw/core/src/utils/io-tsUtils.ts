@@ -1,5 +1,5 @@
 import * as t from 'io-ts';
-import { isLeft } from 'fp-ts/lib/Either';
+import { isLeft } from 'fp-ts/lib/Either.js';
 
 export const optional = <T extends t.Mixed>(type: T) => t.union([type, t.undefined]);
 
@@ -176,3 +176,64 @@ export function integerInRange(min: number, max: number, name: string = `Integer
 export type TypeOfMap<T extends Record<string, t.Mixed>> = {
     [K in keyof T]: t.TypeOf<T[K]>;
 };
+
+type SupportedCodec =
+    t.StringType |
+    t.LiteralType<string> |
+    t.NumberType |
+    NumberInRangeType |
+    IntegerType |
+    IntegerInRangeType |
+    t.BooleanType |
+    t.NullType |
+    t.InterfaceType<t.AnyProps> |
+    t.ArrayType<t.UnknownType> |
+    FixedSizeArrayType<t.Any, number>;
+
+type TaggedCodec = t.Mixed & { _tag: string };
+
+function isTaggedCodec(codec: t.Mixed): codec is TaggedCodec {
+    return (codec as any)._tag !== undefined; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export function makeDefaultState(codec: t.Mixed): t.TypeOf<typeof codec> {
+    if (!isTaggedCodec(codec))
+        throw new Error(`Codec does not have a _tag: ${codec}`);
+
+    const _codec = codec as SupportedCodec;
+
+    switch (_codec._tag) {
+    case 'StringType':
+        return '';
+
+    case 'LiteralType':
+        return _codec.value;
+
+    case 'NumberType':
+        return 0;
+
+    case 'IntegerType':
+        return 0;
+
+    case 'NumberInRangeType':
+    case 'IntegerInRangeType':
+        return _codec.min;
+
+    case 'BooleanType':
+        return false;
+
+    case 'NullType':
+        return null;
+
+    case 'InterfaceType':
+        return Object.fromEntries(Object.entries(_codec.props).map(([key, value]) => [key, makeDefaultState(value as SupportedCodec)]));
+
+    case 'ArrayType':
+        return [];
+
+    case 'FixedSizeArrayType':
+        return Array.from({ length: _codec.size }, () => makeDefaultState(_codec.type as SupportedCodec));
+    }
+
+    throw new Error(`Unsupported codec: ${_codec}`);
+}

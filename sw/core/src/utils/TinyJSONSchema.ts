@@ -7,6 +7,7 @@ type CommonData = {
 
 export type StringSchema = CommonData & {
     type: 'string';
+    enum?: string[];
 };
 
 export type NumberSchema = CommonData & {
@@ -145,6 +146,7 @@ type SupportedCodecs =
     t.NullType |
     t.InterfaceType<t.AnyProps> |
     t.ArrayType<t.UnknownType> |
+    t.UnionType<t.Any[]> |
     FixedSizeArrayType<t.Any, number>;
 
 export function codecToSchema(codec: SupportedCodecs): TinyJSONSchema {
@@ -191,6 +193,12 @@ export function codecToSchema(codec: SupportedCodecs): TinyJSONSchema {
             minItems: codec.size,
             maxItems: codec.size,
         } as ArraySchema;
+
+    case 'UnionType':
+        return {
+            type: 'string' as const,
+            enum: codec.types.map(type => (type as t.LiteralType<string>).value),
+        };
 
     default:
         throw new Error(`Unsupported codec type: ${(codec as any)._tag}`); // eslint-disable-line @typescript-eslint/no-explicit-any

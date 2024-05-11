@@ -102,6 +102,7 @@ export type RawMessage = t.TypeOf<typeof rawMessage>;
 export type Hello = t.TypeOf<typeof hello>;
 export type Command = t.TypeOf<typeof command>;
 export type Event = t.TypeOf<typeof event>;
+export type EventWithTag = Event & { tag: TypeTag };
 
 export type CommandPayload = t.TypeOf<typeof commandPayload>;
 export type EventPayload = t.TypeOf<typeof eventPayload>;

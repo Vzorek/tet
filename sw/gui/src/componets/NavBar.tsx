@@ -1,49 +1,42 @@
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
 
 import Button from '@mui/material/Button';
-import { ButtonGroup, Container } from '@mui/material';
+import { Container } from '@mui/material';
+import { Download } from '@mui/icons-material';
+import { useSelector } from 'react-redux';
+import { getPersistent } from '../features/store';
 
 // Define the props for NavBar component
 interface NavBarProps {
-    links: {
-        name: string;
-        path: string;
-    }[];
 }
 
-interface NavButtonProps {
-    to: string;
-    label: React.ReactNode;
-}
+const NavBar: React.FC<NavBarProps> = () => {
+    const downloadable = useSelector(getPersistent);
+    const handleDownload = () => {
+        const json = JSON.stringify(downloadable, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
 
-const NavButton: React.FC<NavButtonProps> = ({ to, label }) => {
-    const loc = useLocation();
-    const isActive = loc.pathname === to;
-    const variant = isActive ? 'contained' : 'contained';
-    const color = isActive ? 'inherit' : 'primary';
-
-    return (
-        <Link to={to}>
-            <Button variant={variant} color={color}>
-                {label}
-            </Button>
-        </Link>
-    );
-};
-
-const NavBar: React.FC<NavBarProps> = ({ links }) => {
     return (
         <Container style={{
             width: '100%',
             display: 'flex',
-            justifyContent: 'center',
+            justifyContent: 'flex-end',
         }}>
-            <ButtonGroup>
-                {links.map(({ name, path }) => (
-                    <NavButton key={name} to={path} label={name} />
-                ))}
-            </ButtonGroup>
+
+            <Button
+                variant='contained'
+                color='secondary'
+                onClick={handleDownload}
+                startIcon={<Download />}>
+                Download game data
+            </Button>
+
         </Container>
     );
 };

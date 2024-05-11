@@ -18,6 +18,15 @@ store.subscribe(() => {
     saveConfig(store.getState().config);
 });
 
+export function getPersistent(state: State) {
+    const {
+        client,
+        ...rest
+    } = state;
+    client;
+    return rest;
+}
+
 export type State = ReturnType<typeof store.getState>;
 
 export default store;

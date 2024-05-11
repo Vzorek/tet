@@ -13,11 +13,23 @@ const GameControls: FC = () => {
     const dispatch = useDispatch();
 
     const startGame = () => {
-        dispatch({ type: 'client/startGame' });
+        dispatch({
+            type: 'client/sendCommand',
+            payload: {
+                targetId: '__server__',
+                command: 'startGame',
+            },
+        });
     };
 
     const stopGame = () => {
-        dispatch({ type: 'client/stopGame' });
+        dispatch({
+            type: 'client/sendCommand',
+            payload: {
+                targetId: '__server__',
+                command: 'pauseGame',
+            },
+        });
     };
 
     const uploadGameCode = (event: React.ChangeEvent<HTMLInputElement>) => {

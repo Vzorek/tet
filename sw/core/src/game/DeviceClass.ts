@@ -1,5 +1,5 @@
 import { EventMap, ITypedEventEmitter } from '../utils/TypedEventEmitter.js';
-import { Type } from './Type.js';
+import * as t from 'io-ts';
 
 export interface IDevice<State = unknown> {
     readonly id: string;
@@ -7,11 +7,14 @@ export interface IDevice<State = unknown> {
     readonly deviceClass: IDeviceClass<State>;
 }
 
-export interface IDeviceClass<State = unknown, Events extends EventMap = EventMap> extends ITypedEventEmitter<Events> {
-    new(id: string): IDevice<State>;
+export interface IDeviceClass<
+    State = unknown,
+    Events extends EventMap = EventMap,
+    StateC extends t.Type<State> = t.Mixed,
+> extends ITypedEventEmitter<Events> {
     readonly name: string;
-    readonly _state: Type<State>;
-    readonly _events: Type<Events>;
+    readonly _state: StateC;
+    readonly _events: Events;
 }
 
 export type DeviceClassEventMap = {

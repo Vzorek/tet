@@ -1,4 +1,5 @@
 import { Client, createLogger, Server, delay, MQTTConnection, MockConnection } from '@tet/core';
+import { deviceTypes } from '@tet/devices';
 
 const logger = createLogger('WorkerScript');
 
@@ -6,12 +7,12 @@ logger.info(`Host: ${process.env.HOST}`);
 
 logger.info('Starting application');
 
-// const connection = new MQTTConnection('wss://mqtt.gwenlian.eu:8083', {
-//     username: 'tom',
-//     password: 'defense-trout-gratitude-crispness2-galleria-rubbed-treadmill',
-// });
+const connection = new MQTTConnection('ws://127.0.0.1:9001', {
+    // username: 'tom',
+    // password: 'defense-trout-gratitude-crispness2-galleria-rubbed-treadmill',
+});
 
-const connection = new MockConnection();
+// const connection = new MockConnection();
 
 logger.info('Application started');
 
@@ -22,40 +23,48 @@ await server.init();
 
 await delay(1000);
 
-await client.sendCommand(Server.ServerId, 'uploadGameCode', `
-"use strict";
-// console.log("Empty:", game);
-// console.log(GameTypes.number('test'));
-const Test = game.defineDeviceClass("test", {}, {
-    test_event: {
-    },
-});
-// console.log("Device class defined: ", Test);
-Test.on("test_event", (source, data) => {
-    console.log("Event received: ", source, data);
-});;
-const test = new Test("test", {});
-// console.log("Device created: ", game);
-// console.log("getDeviceClass: ", game.getDeviceClass("test"));
-// console.log("getDevice: ", game.getDevice("id"));
-`);
+const tag = 'MockButton_v0.0.0#0.0.0';
 
-await client.sendCommand(Server.ServerId, 'startGame', null);
+// await client.sendCommand(Server.ServerId, 'uploadGameCode', `
+// "use strict";
+// try {
+//     const state = Types.type({
+//         led: Types.type({
+//             r: Types.number,
+//             g: Types.number,
+//             b: Types.number,
+//         }, 'Led'),
+//     }, 'State');
 
-await delay(1000);
+//     const Test = game.defineDeviceClass(${tag}, state, {
+//         buttonPressed: {
+//         },
+//     });
+//     Test.on("buttonPressed", (source, data, state) => {
+//         console.log("Button pressed", source, data, state);
+//         game.updateDeviceState(${tag}, source, {
+//             led: {
+//                 r: 255,
+//                 g: 0,
+//                 b: 0,
+//             },
+//         });
+//     });
+//     const test = game.createDevice(${tag}, "test");
 
-await client.sendHello('test', {
-    initialState: null,
-    typeTag: 'test_v0.0.0#0.0.0',
-    commands: {
-        updateState: { type: 'null' },
-        shutdown: { type: 'null' },
-    },
-    events: {
-        test_event: { type: 'null' },
-    },
-});
+// } catch (e) {
+//     console.log(e);
+// }
+// `);
 
-await delay(1000);
+// await delay(1000);
 
-await client.sendEvent('test', 'test_event', null);
+// await client.sendHello('test', deviceTypes['MockButton_v0.0.0#0.0.0'].definition);
+
+// await delay(1000);
+
+// await client.sendCommand(Server.ServerId, 'startGame', null);
+
+// await delay(2000);
+
+// await client.sendEvent('test', 'buttonPressed', null);

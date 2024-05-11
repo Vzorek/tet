@@ -1,28 +1,168 @@
-import { type Event } from '../communication/index.js';
+import { type EventWithTag } from '../communication/index.js';
 import { TypedEventEmitter } from '../utils/TypedEventEmitter.js';
-import { DeviceClassEventMap, IDevice, IDeviceClass } from './DeviceClass.js';
-import { Type } from './Type.js';
+import { type DeviceClassEventMap, type IDevice, type IDeviceClass } from './DeviceClass.js';
+import * as util from 'util';
+import * as t from 'io-ts';
+import { makeDefaultState } from '../utils/io-tsUtils.js';
+import { isLeft } from 'fp-ts/lib/Either.js';
+import { GameEvent } from 'server/ServerMessage.js';
 
 type GameEvents = {
-    deviceStateChange: () => void;
+    deviceStateChange: (data: { id: string, state: unknown }) => void;
+};
+
+class DeviceClass<State,
+    Events extends DeviceClassEventMap,
+    StateC extends t.Type<State>,
+> implements TypedEventEmitter<Events>, IDeviceClass<StateC, Events> {
+    readonly parent;
+    readonly name;
+    readonly _state;
+    readonly _events;
+    readonly _eventEmitter = new TypedEventEmitter<Events>();
+
+    constructor(parent: Game, name: string, state: StateC, events: Events) {
+        this.parent = parent;
+        this.name = name;
+        this._state = state;
+        this._events = events;
+    }
+
+    addListener<E extends keyof Events>(event: E, listener: Events[E]): this {
+        this._eventEmitter.addListener(event, listener);
+        return this;
+    }
+
+    on<E extends keyof Events>(event: E, listener: Events[E]): this {
+        this._eventEmitter.on(event, listener);
+        return this;
+    }
+
+    once<E extends keyof Events>(event: E, listener: Events[E]): this {
+        this._eventEmitter.once(event, listener);
+        return this;
+    }
+
+    prependListener<E extends keyof Events>(event: E, listener: Events[E]): this {
+        this._eventEmitter.prependListener(event, listener);
+        return this;
+    }
+
+    prependOnceListener<E extends keyof Events>(event: E, listener: Events[E]): this {
+        this._eventEmitter.prependOnceListener(event, listener);
+        return this;
+    }
+
+    off<E extends keyof Events>(event: E, listener: Events[E]): this {
+        this._eventEmitter.off(event, listener);
+        return this;
+    }
+
+    removeAllListeners<E extends keyof Events>(event?: E): this {
+        this._eventEmitter.removeAllListeners(event);
+        return this;
+    }
+
+    removeListener<E extends keyof Events>(event: E, listener: Events[E]): this {
+        this._eventEmitter.removeListener(event, listener);
+        return this;
+    }
+
+    emit<E extends keyof Events>(event: E, ...args: Parameters<Events[E]>): boolean {
+        return this._eventEmitter.emit(event, ...args);
+    }
+
+    eventNames(): (keyof Events | string | symbol)[] {
+        return this._eventEmitter.eventNames();
+    }
+
+    rawListeners<E extends keyof Events>(event: E): Events[E][] {
+        return this._eventEmitter.rawListeners(event);
+    }
+
+    listeners<E extends keyof Events>(event: E): Events[E][] {
+        return this._eventEmitter.listeners(event);
+    }
+
+    listenerCount<E extends keyof Events>(event: E): number {
+        return this._eventEmitter.listenerCount(event);
+    }
+
+    getMaxListeners(): number {
+        return this._eventEmitter.getMaxListeners();
+    }
+
+    setMaxListeners(maxListeners: number): this {
+        this._eventEmitter.setMaxListeners(maxListeners);
+        return this;
+    }
 };
 
 export class Game extends TypedEventEmitter<GameEvents> {
     #deviceClasses: Map<string, IDeviceClass> = new Map();
     #devices: Map<string, IDevice> = new Map();
+    #links: Map<string, string> = new Map();
 
     registerDeviceClass(deviceClass: IDeviceClass) {
         this.#deviceClasses.set(deviceClass.name, deviceClass);
     }
 
-    registerDevice(device: IDevice) {
+    createDevice(deviceClass: string, id: string, initialState?: unknown): IDevice {
+        const deviceClassDef = this.#deviceClasses.get(deviceClass);
+        if (!deviceClassDef) {
+            console.log(`Device classes: ${JSON.stringify(Array.from(this.#deviceClasses.keys()))}`);
+            throw new Error(`Device class with name "${deviceClass}" does not exist`);
+        }
+
+        const _initialStateAny = initialState ? JSON.parse(JSON.stringify(initialState)) : undefined;
+        const _initialState = initialState ? deviceClassDef._state.decode(_initialStateAny) : undefined;
+        if (_initialState && isLeft(_initialState))
+            throw new Error(`Invalid initial state for device "${id}": ${JSON.stringify(_initialStateAny)}`);
+
+        const state = _initialState || makeDefaultState(deviceClassDef._state);
+
+        const device: IDevice = {
+            id,
+            deviceClass: deviceClassDef,
+            state: state,
+        };
+
         this.#devices.set(device.id, device);
+        return device;
+    }
+
+    linkDeviceType(deviceClass: string, tag: string) {
+        const deviceClassDef = this.#deviceClasses.get(deviceClass);
+        if (!deviceClassDef)
+            throw new Error(`Device class with name "${deviceClass}" does not exist`);
+
+        this.#links.set(tag, deviceClass);
+    }
+
+    addDevice(tag: string, id: string): IDevice {
+        const deviceClass = this.#links.get(tag);
+        if (!deviceClass)
+            throw new Error(`No device class linked to tag "${tag}"`);
+
+        return this.createDevice(deviceClass, id);
     }
 
     updateDeviceState<State>(deviceClass: string, id: string, newState: State) {
-        deviceClass;
-        id;
-        newState;
+        const device = this.#devices.get(id);
+        if (!device || device.deviceClass.name !== deviceClass)
+            throw new Error(`Device with id "${id}" does not exist`);
+
+        console.log(`Updating device state: ${util.inspect(newState)}`);
+
+        // We probably get a proxy here, so we need to clone the state
+        const copy = JSON.parse(JSON.stringify(newState));
+
+        device.state = copy;
+        // TODO: Calc diff of state and emit only the diff
+        this.emit('deviceStateChange', {
+            id,
+            state: copy,
+        });
     }
 
     getDeviceClass(name: string): IDeviceClass | undefined {
@@ -33,106 +173,49 @@ export class Game extends TypedEventEmitter<GameEvents> {
         return this.#devices.get(id);
     }
 
-    defineDeviceClass<State, Events extends DeviceClassEventMap>(name: string, state: Type<State>, events: Type<Events>): IDeviceClass<State, Events> {
-        const parent = this; // eslint-disable-line @typescript-eslint/no-this-alias
+    getDevicesByClass(name: string): IDevice[] {
+        return Array.from(this.#devices.values()).filter(device => device.deviceClass.name === name);
+    }
 
-        const out = class Device implements IDevice<State> {
-            static readonly parent = parent;
-            static readonly name = name;
-            static readonly _state = state;
-            static readonly _events = events;
-            static #eventEmitter = new TypedEventEmitter<Events>();
-
-            readonly deviceClass = Device;
-            readonly id!: string;
-            state: State;
-
-            constructor(id: string, initialState?: State) {
-                if (Device.parent.getDevice(id))
-                    throw new Error(`Device with id "${id}" already exists`);
-
-                Object.defineProperty(this, 'id', { value: id, writable: false });
-                this.state = initialState || state.createDefault();
-
-                Device.parent.registerDevice(this); // Register the device with the active game
-            }
-
-            static addListener<E extends keyof Events>(event: E, listener: Events[E]): typeof Device {
-                Device.#eventEmitter.addListener(event, listener);
-                return Device;
-            }
-
-            static on<E extends keyof Events>(event: E, listener: Events[E]): typeof Device {
-                Device.#eventEmitter.on(event, listener);
-                return Device;
-            }
-
-            static once<E extends keyof Events>(event: E, listener: Events[E]): typeof Device {
-                Device.#eventEmitter.once(event, listener);
-                return Device;
-            }
-
-            static prependListener<E extends keyof Events>(event: E, listener: Events[E]): typeof Device {
-                Device.#eventEmitter.prependListener(event, listener);
-                return Device;
-            }
-
-            static prependOnceListener<E extends keyof Events>(event: E, listener: Events[E]): typeof Device {
-                Device.#eventEmitter.prependOnceListener(event, listener);
-                return Device;
-            }
-
-            static off<E extends keyof Events>(event: E, listener: Events[E]): typeof Device {
-                Device.#eventEmitter.off(event, listener);
-                return Device;
-            }
-
-            static removeAllListeners<E extends keyof Events>(event?: E): typeof Device {
-                Device.#eventEmitter.removeAllListeners(event);
-                return Device;
-            }
-
-            static removeListener<E extends keyof Events>(event: E, listener: Events[E]): typeof Device {
-                Device.#eventEmitter.removeListener(event, listener);
-                return Device;
-            }
-
-            static emit<E extends keyof Events>(event: E, ...args: Parameters<Events[E]>): boolean {
-                return Device.#eventEmitter.emit(event, ...args);
-            }
-
-            static eventNames(): (keyof Events | string | symbol)[] {
-                return Device.#eventEmitter.eventNames();
-            }
-
-            static rawListeners<E extends keyof Events>(event: E): Events[E][] {
-                return Device.#eventEmitter.rawListeners(event);
-            }
-
-            static listeners<E extends keyof Events>(event: E): Events[E][] {
-                return Device.#eventEmitter.listeners(event);
-            }
-
-            static listenerCount<E extends keyof Events>(event: E): number {
-                return Device.#eventEmitter.listenerCount(event);
-            }
-
-            static getMaxListeners(): number {
-                return Device.#eventEmitter.getMaxListeners();
-            }
-
-            static setMaxListeners(maxListeners: number): typeof Device {
-                Device.#eventEmitter.setMaxListeners(maxListeners);
-                return Device;
-            }
-        };
+    defineDeviceClass<State,
+        Events extends DeviceClassEventMap,
+        StateC extends t.Type<State>,
+    >(
+        name: string,
+        state: StateC,
+        events: Events,
+    ): IDeviceClass<StateC, Events> {
+        const out = new DeviceClass<State, Events, StateC>(this, name, state, events);
 
         this.registerDeviceClass(out); // Register the device class with the active game
 
         return out;
     }
 
-    receiveEvent(event: Event) {
-        this.#devices.get(event.sourceId)?.deviceClass.emit(event.event, event.sourceId, event.data);
+    /**
+     * @brief Resolves a device from a source object.
+     *
+     * If device already exists, it is returned.
+     * Otherwise, if a device class is linked to the tag, a new device is created.
+     *
+     * @param identification - The source object
+     * @returns The device
+     */
+    resolveDevice({ id, tag }: { id: string, tag: string }): IDevice {
+        return this.#devices.get(id) || this.addDevice(tag, id);
+    }
+
+    receiveEvent(event: GameEvent) {
+        try {
+            const device = this.resolveDevice(event.source);
+
+            // We need to clone the state here, because the device class might modify it, which is not allowed
+            const state = structuredClone(device.state);
+
+            device.deviceClass.emit(event.event.event, event.source.id, event.event.data, state);
+
+        } catch (e) {
+            console.error('Error while handling event:', e);
+        }
     }
 };

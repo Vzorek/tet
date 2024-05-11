@@ -57,6 +57,13 @@ export type Actions = {
             position: [number, number];
         };
     },
+    updateState: {
+        type: 'devices/updateState';
+        payload: {
+            targetId: string;
+            state: DeviceState;
+        };
+    },
 };
 
 type UnionOfMembers<T> = T[keyof T];
@@ -95,6 +102,10 @@ const devicesSlice = createSlice({
                 throw new Error(`Device not found: ${action.payload.id}`);
 
             device.position = action.payload.position;
+        },
+        updateState(state, action) {
+            const { targetId, state: newDeviceState } = action.payload as Actions['updateState']['payload'];
+            state.devices[targetId].state = newDeviceState;
         },
     },
 });

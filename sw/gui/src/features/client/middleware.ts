@@ -3,6 +3,7 @@ import { Action } from '../slices';
 import { IDeviceType, deviceTypes as initialDeviceTypes } from '@tet/devices';
 import { Dispatch, MiddlewareAPI } from '@reduxjs/toolkit';
 import { IClientOptions } from 'async-mqtt';
+import { DeviceState } from '../slices/devices';
 
 const deviceTypes: Record<string, IDeviceType> = { ...initialDeviceTypes };
 
@@ -61,7 +62,9 @@ class Context {
                     state: hello.definitions.initialState,
                 },
             });
+            this.client?.subscribeToCommands(hello.sourceId);
         });
+        this.client.subscribeToDevices();
     }
 
     async disconnectMQTT() {
@@ -103,10 +106,6 @@ class Context {
     }
 
     async createDevice(id: string, tag: string) {
-        const state = this.api.getState();
-        if (state.config.currentType !== 'mock')
-            throw new Error('Cannot create device in non-mock mode');
-
         if (this.client === null)
             throw new Error('Client is not connected');
 
@@ -167,6 +166,17 @@ const createConnectionMiddleware = (api: MiddlewareAPI<Dispatch<Action>>) => {
             const { targetId, command, data } = action.payload;
             if (context.client !== null)
                 context.client.sendCommand(targetId, command, data);
+            break;
+        }
+
+        case 'client/receiveCommand': {
+            const { targetId, command, data } = action.payload;
+            switch (command) {
+            case 'stateChange':
+                api.dispatch({ type: 'devices/updateState', payload: { targetId, state: data as DeviceState } });
+                break;
+            }
+
             break;
         }
 

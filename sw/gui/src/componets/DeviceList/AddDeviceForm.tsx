@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Button, FormHelperText, SelectChangeEvent } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Button, FormHelperText, SelectChangeEvent, TextField, Dialog, DialogActions, DialogContent } from '@mui/material';
 import { type IDeviceType } from '@tet/devices';
 import { JsonView } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
@@ -37,7 +37,7 @@ const DeviceDefinition: React.FC<DeviceDefinitionProps> = ({ definition }) => {
     );
 };
 
-type AddDeviceFormProps = {
+type FormProps = {
     onSubmit: (data: {
         tag: string;
         id: string;
@@ -45,9 +45,15 @@ type AddDeviceFormProps = {
     }) => void;
 };
 
-const AddDeviceForm: React.FC<AddDeviceFormProps> = ({ onSubmit }) => {
+type AddDeviceFormProps = FormProps & {
+    open: boolean;
+    setOpen: (open: boolean) => void;
+};
+
+const AddDeviceForm: React.FC<AddDeviceFormProps> = ({ open, setOpen, onSubmit }) => {
     const deviceTypes = getDeviceTypes();
     const [selectedDeviceType, setSelectedDeviceType] = useState('');
+    const [deviceId, setDeviceId] = useState('');
     const [error, setError] = useState(false);
 
     const handleSelectDevice = (event: SelectChangeEvent) => {
@@ -62,31 +68,56 @@ const AddDeviceForm: React.FC<AddDeviceFormProps> = ({ onSubmit }) => {
         }
         onSubmit({
             tag: selectedDeviceType,
-            id: Math.random().toString(36).substring(7),
+            id: deviceId,
         });
+        setSelectedDeviceType('');
+        setDeviceId('');
     };
 
+    const handleClose = () => {
+        setOpen(false);
+        setSelectedDeviceType('');
+        setDeviceId('');
+    }
+
     return (
-        <form>
-            <FormControl fullWidth error={error}>
-                <InputLabel id="device-select-label">Select a Device</InputLabel>
-                <Select
-                    labelId="device-select-label"
-                    value={selectedDeviceType}
-                    label="Select a Device"
-                    onChange={handleSelectDevice}
-                >
-                    {Object.entries(deviceTypes).map(([tag, type]) => (
-                        <MenuItem key={tag} value={tag}>{type.tag}</MenuItem>
-                    ))}
-                </Select>
-                {error && <FormHelperText>Please select a device</FormHelperText>}
-            </FormControl>
-            {selectedDeviceType && <DeviceDefinition definition={deviceTypes[selectedDeviceType]!} />}
-            <Button variant="contained" color="primary" onClick={handleSubmit} style={{ marginTop: 16 }}>
-                Add Device
-            </Button>
-        </form>
+        <Dialog open={open} onClose={handleClose}>
+            <DialogContent>
+                <form>
+                    <FormControl fullWidth error={error}>
+                        <InputLabel id="device-select-label">Select a Device</InputLabel>
+                        <Select
+                            labelId="device-select-label"
+                            value={selectedDeviceType}
+                            label="Select a Device"
+                            onChange={handleSelectDevice}
+                        >
+                            {Object.entries(deviceTypes).map(([tag, type]) => (
+                                <MenuItem key={tag} value={tag}>{type.tag}</MenuItem>
+                            ))}
+                        </Select>
+                        {error && <FormHelperText>Please select a device</FormHelperText>}
+                    </FormControl>
+                    {selectedDeviceType && <DeviceDefinition definition={deviceTypes[selectedDeviceType]!} />}
+
+                    <FormControl fullWidth style={{ marginTop: 16 }}>
+                        <TextField
+                            id="device-id"
+                            type="text"
+                            value={deviceId}
+                            label="Device ID"
+                            onChange={e => setDeviceId(e.target.value)}
+                        />
+                    </FormControl>
+                </form>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleClose}>Cancel</Button>
+                <Button variant="contained" color="primary" onClick={handleSubmit}>
+                    Add Device
+                </Button>
+            </DialogActions>
+        </Dialog >
     );
 };
 

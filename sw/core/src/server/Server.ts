@@ -3,6 +3,9 @@ import { Client, DeviceDefinition, type Command, type Event, type Hello } from '
 import { LogicError } from '../errors/index.js';
 import { IWorker, createWorker } from '../worker/index.js';
 import * as SM from './ServerMessage.js';
+import { workerMessage } from './WorkerMessage.js';
+import { isLeft, mapLeft } from 'fp-ts/lib/Either.js';
+import reporter, { formatValidationErrors } from 'io-ts-reporters';
 
 const logger = createLogger('Server');
 
@@ -56,6 +59,9 @@ export class Server {
     private _gameCode: string | null = null;
     private _worker: IWorker | null = null;
 
+    private _workerReadyResolve: (() => void) | null = null;
+    private _workerReadyReject: ((error: Error) => void) | null = null;
+
     get paused(): boolean { return this._state === 'paused'; }
     get running(): boolean { return this._state === 'running'; }
     get gameInProgress(): boolean { return this.running || this.paused; }
@@ -80,18 +86,51 @@ export class Server {
         await this._client.subscribeToCommands(Server.ServerId);
 
         logger.verbose('Creating worker');
+
+        const readyPromise = new Promise<void>((resolve, reject) => {
+            this._workerReadyResolve = resolve;
+            this._workerReadyReject = reject;
+        });
+
         this._worker = await createWorker(workerScriptURL);
         this._worker.onMessage(msg => this.handleWorkerMessage(msg));
         this._worker.onError(err => this.reportError(err));
 
         logger.debug('Worker created');
+
+        await readyPromise;
+
+        this._workerReadyReject = null;
+        this._workerReadyResolve = null;
     }
 
     private handleWorkerMessage(msg: unknown): void {
-        if (msg instanceof Error)
-            this.reportError(msg);
-        else
-            logger.info('Received message from worker:', msg);
+        const _decoded = workerMessage.decode(msg);
+        if (isLeft(_decoded)) {
+            reporter.report(_decoded);
+            return;
+        }
+
+        const decoded = _decoded.right;
+
+        switch (decoded.type) {
+        case 'error':
+            if (this._workerReadyReject)
+                this._workerReadyReject(decoded.error);
+
+            this.reportError(decoded.error);
+            break;
+
+        case 'updateDeviceState':
+            this._client.sendCommand(decoded.id, 'stateChange', decoded.state);
+            break;
+
+        case 'ready':
+            if (this._workerReadyResolve)
+                this._workerReadyResolve();
+            logger.info('Worker ready');
+            break;
+        }
     }
 
     async deinit(): Promise<void> {
@@ -171,8 +210,10 @@ export class Server {
 
     private handleCommand(msg: Command): void {
         logger.debug(`Received command: ${msg}`);
-        if (!isServerCommand(msg))
+        if (!isServerCommand(msg)){
+            return;
             throw new LogicError(`Received command for unknown target: ${msg.targetId}`);
+        }
 
         switch (msg.command) {
         case 'startGame':
@@ -202,13 +243,17 @@ export class Server {
     private handleEvent(msg: Event): void {
         console.log('Received event:', msg);
         logger.debug(`Received event: ${msg}`);
-        if (!this.running)
+        if (!this.running) {
+            logger.debug('Ignoring event, game not running');
             return; // Ignore events when not running
+        }
 
         // Only handle events from known devices
         const device = this._devices.get(msg.sourceId);
         if (!device)
             throw new LogicError(`Received event from unknown device: ${msg.sourceId}`);
+
+        logger.debug(`Received event from device: ${device.typeTag}`);
 
         // Only handle known events
         const def = device.events[msg.event];
@@ -218,6 +263,10 @@ export class Server {
         // Pass event to game runtime
         this._worker?.postMessage({
             type: 'event',
+            source: {
+                id: msg.sourceId,
+                tag: device.typeTag,
+            },
             event: msg,
         } as SM.GameEvent);
     }
@@ -229,10 +278,17 @@ export class Server {
         logger.debug(`Received hello: ${msg}`);
         this._devices.set(msg.sourceId, msg.definitions);
         this._client.subscribeToEvents(msg.sourceId);
-        logger.debug(this._devices);
+
+        // this._worker?.postMessage({
+        //     type: 'addDevice',
+        //     device: msg.sourceId,
+        //     definition: msg.definitions,
+        // } as SM.AddDevice);
     }
 
     reportError(error: Error): void {
+        if (Object.keys(error).length === 0)
+            error = new Error('Unknown error');
         logger.error(error);
         this._client.sendEvent(Server.ServerId, 'error', error);
     }

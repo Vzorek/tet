@@ -1,31 +1,52 @@
-import { type Event } from '../communication/index.js';
+import { event, deviceDefinition } from '../communication/index.js';
+import * as t from 'io-ts';
 
-export type Start = {
-    type: 'start',
-};
+export const start = t.type({
+    type: t.literal('start'),
+});
 
-export type Pause = {
-    type: 'pause',
-};
+export const pause = t.type({
+    type: t.literal('pause'),
+});
 
-export type Reset = {
-    type: 'reset',
-};
+export const reset = t.type({
+    type: t.literal('reset'),
+});
 
-export type RunScript = {
-    type: 'runScript',
-    script: string,
-};
+export const runScript = t.type({
+    type: t.literal('runScript'),
+    script: t.string,
+});
 
-export type GameEvent = {
-    type: 'event',
-    event: Event,
-};
+export const gameEvent = t.type({
+    type: t.literal('event'),
+    source: t.type({
+        id: t.string,
+        tag: t.string,
+    }),
+    event: event,
+});
 
-export type ServerMessage = Start | Pause | Reset | RunScript | GameEvent;
+export const addDevice = t.type({
+    type: t.literal('addDevice'),
+    definition: deviceDefinition,
+    id: t.string,
+});
 
-export function isStart(msg: ServerMessage): msg is Start { return msg.type === 'start'; }
-export function isPause(msg: ServerMessage): msg is Pause { return msg.type === 'pause'; }
-export function isReset(msg: ServerMessage): msg is Reset { return msg.type === 'reset'; }
-export function isRunScript(msg: ServerMessage): msg is RunScript { return msg.type === 'runScript'; }
-export function isGameEvent(msg: ServerMessage): msg is GameEvent { return msg.type === 'event'; }
+export const serverMessage = t.union([
+    start,
+    pause,
+    reset,
+    runScript,
+    gameEvent,
+    addDevice,
+]);
+
+export type Start = t.TypeOf<typeof start>;
+export type Pause = t.TypeOf<typeof pause>;
+export type Reset = t.TypeOf<typeof reset>;
+export type RunScript = t.TypeOf<typeof runScript>;
+export type GameEvent = t.TypeOf<typeof gameEvent>;
+export type AddDevice = t.TypeOf<typeof addDevice>;
+
+export type ServerMessage = t.TypeOf<typeof serverMessage>;
