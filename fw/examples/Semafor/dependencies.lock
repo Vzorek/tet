@@ -1,0 +1,22 @@
+dependencies:
+  SmartLeds:
+    component_hash: 423ab43995fc50fe8e3b6fb3b26a5697816a18d44538880081f413459631b33b
+    source:
+      git: https://github.com/RoboticsBrno/SmartLeds.git
+      path: .
+      type: git
+    version: ede05a64142a75e71d7dcd4a321e045ea53e0c5a
+  espressif/mDNS:
+    component_hash: ed10ef031bce505e423c5dbf0fdf2ce7a02df5f9ebffb18df2d6b9852e48817d
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.3.1
+  idf:
+    component_hash: null
+    source:
+      type: idf
+    version: 5.3.0
+manifest_hash: b8c6e74b62e7f9bf9cff8e03ee07b48e9824111f5696eb03f6b3e1d31a18c3b6
+target: esp32c3
+version: 1.0.0

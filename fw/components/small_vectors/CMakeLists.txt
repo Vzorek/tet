@@ -9,7 +9,7 @@ idf_component_register()
 
 include(FetchContent)
 
-FetchContent_Declare(small_vectors URL https://github.com/arturbac/small_vectors/archive/refs/heads/master.zip)
+FetchContent_Declare(small_vectors URL https://github.com/arturbac/small_vectors/archive/279c8dd7d6cb79c1aec4151f648a0f09a7cef233.zip)
 FetchContent_Populate(small_vectors)
 # FetchContent_MakeAvailable(small_vectors)
 

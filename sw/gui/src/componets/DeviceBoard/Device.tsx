@@ -67,7 +67,7 @@ const Device: React.FC<DeviceProperties> = ({
             payload: {
                 sourceId: id,
                 event,
-                payload,
+                data: payload,
             },
         });
     };

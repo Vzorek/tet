@@ -77,18 +77,22 @@ export class Client extends TypedEventEmitter<ClientEventCallbacks> implements I
             return;
         }
 
-        this.emit('message', parsed.right);
+        try {
+            this.emit('message', parsed.right);
 
-        switch (parsed.right.type) {
-        case 'hello':
-            this.emit('hello', parsed.right);
-            break;
-        case 'command':
-            this.emit('command', parsed.right);
-            break;
-        case 'event':
-            this.emit('event', parsed.right);
-            break;
+            switch (parsed.right.type) {
+            case 'hello':
+                this.emit('hello', parsed.right);
+                break;
+            case 'command':
+                this.emit('command', parsed.right);
+                break;
+            case 'event':
+                this.emit('event', parsed.right);
+                break;
+            }
+        } catch (error) {
+            logger.error(error);
         }
     }
 

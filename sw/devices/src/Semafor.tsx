@@ -19,7 +19,7 @@ const events = {
 
 type Events = typeof events;
 
-const initialLeds = (new Array<Rgb>(12)).fill({ r: 255, g: 0, b: 0 });
+const initialLeds = (new Array<Rgb>(12)).fill({ r: 0, g: 0, b: 0 });
 if (!stateCodec.props.leds.is(initialLeds))
     throw new Error('Invalid default leds');
 
