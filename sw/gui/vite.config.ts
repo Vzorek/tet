@@ -13,6 +13,7 @@ export default defineConfig({
             url: 'rollup-plugin-node-polyfills/polyfills/url',
             util: 'rollup-plugin-node-polyfills/polyfills/util',
             querystring: 'rollup-plugin-node-polyfills/polyfills/qs',
+            mqtt: 'mqtt/dist/mqtt.js',
         },
     },
     plugins: [
