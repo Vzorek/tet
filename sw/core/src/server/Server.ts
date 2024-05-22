@@ -210,28 +210,33 @@ export class Server {
 
     private handleCommand(msg: Command): void {
         logger.debug(`Received command: ${msg}`);
-        if (!isServerCommand(msg)){
+        if (!isServerCommand(msg)) {
             return;
             throw new LogicError(`Received command for unknown target: ${msg.targetId}`);
         }
 
-        switch (msg.command) {
-        case 'startGame':
-            this.startGame();
-            break;
+        try {
+            switch (msg.command) {
+            case 'startGame':
+                this.startGame();
+                break;
 
-        case 'pauseGame':
-            this.pauseGame();
-            break;
+            case 'pauseGame':
+                this.pauseGame();
+                break;
 
-        case 'resetGame':
-            this.resetGame();
-            break;
+            case 'resetGame':
+                this.resetGame();
+                break;
 
-        case 'uploadGameCode':
-            this.uploadGameCode(msg.data);
-            break;
+            case 'uploadGameCode':
+                this.uploadGameCode(msg.data);
+                break;
+            }
+        } catch (error) {
+            this.reportError(error as Error);
         }
+
     }
 
     uploadGameCode(code: string) {

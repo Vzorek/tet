@@ -45,6 +45,7 @@ class Context {
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             this.api.dispatch({ type: 'client/connectionFailureMQTT', payload: { error: message } });
+            this.client = null;
         }
     }
 

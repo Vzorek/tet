@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  node-app:
+    build:
+      context: ../
+      dockerfile: Dockerfile.server
+    depends_on:
+      - mosquitto
+    networks:
+      - mqtt-net
+    command: >
+      node server/dist/src/index.js
+      --host ws://mosquitto:9001
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - mqtt-net
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    tmpfs:
+      - /mosquitto/data
+      - /mosquitto/log
+
+networks:
+  mqtt-net:
+    driver: bridge

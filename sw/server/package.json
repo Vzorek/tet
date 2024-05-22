@@ -10,11 +10,12 @@
         "start": "npm run build && node dist/src/index.js"
     },
     "dependencies": {
+        "@tet/core": "^0.0.0",
+        "@tet/devices": "^0.0.0",
+        "commander": "^12.1.0",
         "events": "^3.3.0",
         "io-ts": "^2.2.21",
-        "mqtt": "^5.3.5",
-        "@tet/core": "^0.0.0",
-        "@tet/devices": "^0.0.0"
+        "mqtt": "^5.3.5"
     },
     "devDependencies": {
         "@jest/globals": "^29.7.0",

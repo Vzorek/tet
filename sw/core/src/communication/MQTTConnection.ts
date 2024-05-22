@@ -6,6 +6,8 @@ import MQTT from 'async-mqtt';
 
 const logger = createLogger('MQTTConnection');
 
+export { type IClientOptions } from 'async-mqtt';
+
 export class MQTTConnection extends TypedEventEmitter<ConnectionEventCallbacks> implements IConnection {
     private client: MQTT.AsyncClient | null = null;
     private host: string;

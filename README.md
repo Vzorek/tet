@@ -117,7 +117,6 @@ State object definition is in form of:
 
 #### Standardized definitions
 These are some definitions that are to be used across all devices (it would be useful to keep them consistent across devices):
-
 - rgb
 ```
 {
