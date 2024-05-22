@@ -9,7 +9,7 @@ import { isLeft } from 'fp-ts/lib/Either.js';
 export const stateCodec = t.type({
     doors: fixedSizeArray(t.boolean, 4),
     top: fixedSizeArray(Rgb, 60),
-    side: fixedSizeArray(Rgb, 54),
+    side: fixedSizeArray(Rgb, 52),
 });
 
 export type State = t.TypeOf<typeof stateCodec>;
@@ -24,7 +24,7 @@ export const events: Record<string, t.Mixed> = {
 export type Events = TypeOfMap<typeof events>;
 
 const defaultTop = (new Array<Rgb>(60)).fill({ r: 255, g: 0, b: 0 });
-const defaultSide = (new Array<Rgb>(54)).fill({ r: 0, g: 255, b: 0 });
+const defaultSide = (new Array<Rgb>(52)).fill({ r: 0, g: 255, b: 0 });
 
 if (!stateCodec.props.top.is(defaultTop))
     throw new Error('Invalid default top');

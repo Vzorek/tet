@@ -14,7 +14,7 @@ export const stateCodec = t.type({
 export type State = t.TypeOf<typeof stateCodec>;
 
 const events = {
-    buttonClicked: t.union([t.literal('A'), t.literal('B'), t.literal('AB')]),
+    buttonPressed: t.union([t.literal('A'), t.literal('B'), t.literal('AB')]),
 };
 
 type Events = typeof events;
@@ -49,13 +49,13 @@ export const render: Renderer<State, TypeOfMap<Events>> = (state, onEvent) => {
     const btnH = btnW;
 
     const handleLeftButtonClick = () => {
-        onEvent('buttonClicked', 'A');
+        onEvent('buttonPressed', 'A');
         setLeftButtonClicked(true);
         setTimeout(() => setLeftButtonClicked(false), 100); // Reset animation after 300ms
     };
 
     const handleRightButtonClick = () => {
-        onEvent('buttonClicked', 'B');
+        onEvent('buttonPressed', 'B');
         setRightButtonClicked(true);
         setTimeout(() => setRightButtonClicked(false), 100); // Reset animation after 300ms
     };
