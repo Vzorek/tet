@@ -7,6 +7,14 @@ export interface IDevice<State = unknown> {
     readonly deviceClass: IDeviceClass<State>;
 }
 
+export function dumpDevice<T extends IDevice>(device: T) {
+    return {
+        id: device.id,
+        state: device.state,
+        deviceClass: dumpDeviceClass(device.deviceClass),
+    };
+}
+
 export interface IDeviceClass<
     State = unknown,
     Events extends EventMap = EventMap,
@@ -15,6 +23,10 @@ export interface IDeviceClass<
     readonly name: string;
     readonly _state: StateC;
     readonly _events: Events;
+}
+
+export function dumpDeviceClass<T extends IDeviceClass>(deviceClass: T): string {
+    return deviceClass.name;
 }
 
 export type DeviceClassEventMap = {

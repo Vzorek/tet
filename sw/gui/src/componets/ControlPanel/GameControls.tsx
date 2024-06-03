@@ -18,6 +18,7 @@ const GameControls: FC = () => {
             payload: {
                 targetId: '__server__',
                 command: 'startGame',
+                data: null,
             },
         });
     };
@@ -28,22 +29,55 @@ const GameControls: FC = () => {
             payload: {
                 targetId: '__server__',
                 command: 'pauseGame',
+                data: null,
             },
         });
     };
 
-    const uploadGameCode = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const loadGame = (data: string) => {
+        const parsed = JSON.parse(data);
+        if (!parsed.serverData || !parsed.layoutData)
+            throw new Error('Invalid game data');
+
+        dispatch({
+            type: 'client/sendCommand',
+            payload: {
+                targetId: '__server__',
+                command: 'loadGame',
+                data: parsed.serverData,
+            },
+        });
+
+        dispatch({
+            type: 'devices/loadLayout',
+            payload: parsed.layoutData,
+        });
+    };
+
+    const uploadGameCode = (data: string) => {
+        dispatch({
+            type: 'client/sendCommand',
+            payload: {
+                targetId: '__server__',
+                command: 'uploadGameCode',
+                data: data,
+            },
+        });
+    };
+
+    const handleUploadSubmit = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = async event => {
             const contents = event.target?.result;
             if (typeof contents !== 'string') return;
-            dispatch({ type: 'client/sendCommand', payload: {
-                targetId: '__server__',
-                command: 'uploadGameCode',
-                data: contents,
-            } });
+            switch (file.name.split('.').at(-1)) {
+            case 'js':
+                return uploadGameCode(contents);
+            case 'json':
+                return loadGame(contents);
+            }
         };
         reader.readAsText(file);
     };
@@ -66,8 +100,8 @@ const GameControls: FC = () => {
                     <Input
                         type="file"
                         style={{ display: 'none' }}
-                        onChange={uploadGameCode}
-                        inputProps={{ accept: '.js' }}
+                        onChange={handleUploadSubmit}
+                        inputProps={{ accept: '.js,.json' }}
                     />
                 </Button>
             </ButtonGroup>

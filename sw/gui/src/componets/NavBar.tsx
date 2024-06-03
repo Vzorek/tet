@@ -3,23 +3,23 @@ import React from 'react';
 import Button from '@mui/material/Button';
 import { Container } from '@mui/material';
 import { Download } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
-import { getPersistent } from '../features/store';
+import { useDispatch } from 'react-redux';
 
 // Define the props for NavBar component
 interface NavBarProps {
 }
 
 const NavBar: React.FC<NavBarProps> = () => {
-    const downloadable = useSelector(getPersistent);
+    const dispatch = useDispatch();
     const handleDownload = () => {
-        const json = JSON.stringify(downloadable, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.click();
-        URL.revokeObjectURL(url);
+        dispatch({
+            type: 'client/sendCommand',
+            payload: {
+                targetId: '__server__',
+                command: 'dumpGame',
+                data: null,
+            },
+        });
     };
 
     return (

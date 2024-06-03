@@ -33,6 +33,24 @@ export const addDevice = t.type({
     id: t.string,
 });
 
+export const dumpGame = t.type({
+    type: t.literal('dump'),
+});
+
+export const gameData = t.type({
+    devices: t.array(t.type({
+        id: t.string,
+        state: t.any,
+        deviceClass: t.string,
+    })),
+    links: t.record(t.string, t.string),
+});
+
+export const loadGame = t.type({
+    type: t.literal('load'),
+    data: gameData,
+});
+
 export const serverMessage = t.union([
     start,
     pause,
@@ -40,7 +58,11 @@ export const serverMessage = t.union([
     runScript,
     gameEvent,
     addDevice,
+    dumpGame,
+    loadGame,
 ]);
+
+export type GameData = t.TypeOf<typeof gameData>;
 
 export type Start = t.TypeOf<typeof start>;
 export type Pause = t.TypeOf<typeof pause>;
@@ -48,5 +70,7 @@ export type Reset = t.TypeOf<typeof reset>;
 export type RunScript = t.TypeOf<typeof runScript>;
 export type GameEvent = t.TypeOf<typeof gameEvent>;
 export type AddDevice = t.TypeOf<typeof addDevice>;
+export type DumpGame = t.TypeOf<typeof dumpGame>;
+export type LoadGame = t.TypeOf<typeof loadGame>;
 
 export type ServerMessage = t.TypeOf<typeof serverMessage>;

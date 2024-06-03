@@ -59,12 +59,15 @@ export class MQTTConnection extends TypedEventEmitter<ConnectionEventCallbacks> 
         return !!this.client && this.client.connected;
     }
 
-    async send(topic: string, payload: string): Promise<void> {
+    async send(topic: string, payload: string, retain: boolean = false): Promise<void> {
         if (!this.client)
             throw new InvalidStateError('Not connected');
 
         logger.debug(`Sending message to topic ${topic}: ${payload}`);
-        await this.client.publish(topic, payload);
+        if (retain)
+            await this.client.publish(topic, payload, { retain: true });
+        else
+            await this.client.publish(topic, payload);
     }
 
     async subscribe(topic: string): Promise<void> {

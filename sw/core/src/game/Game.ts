@@ -1,4 +1,3 @@
-import { type EventWithTag } from '../communication/index.js';
 import { TypedEventEmitter } from '../utils/TypedEventEmitter.js';
 import { type DeviceClassEventMap, type IDevice, type IDeviceClass } from './DeviceClass.js';
 import * as util from 'util';
@@ -119,7 +118,9 @@ export class Game extends TypedEventEmitter<GameEvents> {
         if (_initialState && isLeft(_initialState))
             throw new Error(`Invalid initial state for device "${id}": ${JSON.stringify(_initialStateAny)}`);
 
-        const state = _initialState || makeDefaultState(deviceClassDef._state);
+        const state = _initialState ? _initialState.right : makeDefaultState(deviceClassDef._state);
+
+        console.log(`Creating device with state: ${util.inspect(state)}`);
 
         const device: IDevice = {
             id,
@@ -173,8 +174,20 @@ export class Game extends TypedEventEmitter<GameEvents> {
         return this.#devices.get(id);
     }
 
+    getDevices(): IDevice[] {
+        return Array.from(this.#devices.values());
+    }
+
+    getDeviceClasses(): IDeviceClass[] {
+        return Array.from(this.#deviceClasses.values());
+    }
+
     getDevicesByClass(name: string): IDevice[] {
         return Array.from(this.#devices.values()).filter(device => device.deviceClass.name === name);
+    }
+
+    getLinks(): Map<string, string> {
+        return this.#links;
     }
 
     defineDeviceClass<State,

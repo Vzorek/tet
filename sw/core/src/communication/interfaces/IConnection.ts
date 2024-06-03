@@ -26,9 +26,11 @@ export interface IConnection extends TypedEventEmitter<ConnectionEventCallbacks>
      *
      * @param topic - The topic to send the message to
      * @param payload - The message to send
+     * @param retain - Whether to keep the message in the broker
      *
      * @async
      */
+    send(topic: string, payload: string, retain: boolean): Promise<void>;
     send(topic: string, payload: string): Promise<void>;
 
     /**

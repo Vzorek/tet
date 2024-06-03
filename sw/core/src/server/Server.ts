@@ -1,11 +1,12 @@
 import { createLogger } from '../log/index.js';
-import { Client, DeviceDefinition, type Command, type Event, type Hello } from '../communication/index.js';
+import { Client, DeviceDefinition, deviceDefinition, type Command, type Event, type Hello } from '../communication/index.js';
 import { LogicError } from '../errors/index.js';
 import { IWorker, createWorker } from '../worker/index.js';
 import * as SM from './ServerMessage.js';
 import { workerMessage } from './WorkerMessage.js';
-import { isLeft, mapLeft } from 'fp-ts/lib/Either.js';
+import { isLeft } from 'fp-ts/lib/Either.js';
 import reporter, { formatValidationErrors } from 'io-ts-reporters';
+import * as t from 'io-ts';
 
 const logger = createLogger('Server');
 
@@ -21,33 +22,33 @@ const logger = createLogger('Server');
 //     time: number,
 // }
 
-interface StartGame extends Command {
-    command: 'startGame',
-    data: null,
-};
-
-interface PauseGame extends Command {
-    command: 'pauseGame',
-    data: null,
-};
-
-interface ResetGame extends Command {
-    command: 'resetGame',
-    data: null,
-};
-
-interface UploadGameCode extends Command {
-    command: 'uploadGameCode',
-    data: string,
-};
-
-type ServerCommand = StartGame | PauseGame | ResetGame | UploadGameCode;
-
-function isServerCommand(command: Command): command is ServerCommand {
-    return command.targetId === Server.ServerId;
+function makeCommand<T extends string, C extends t.Mixed>(command: T, dataCodec: C) {
+    return t.type({
+        type: t.literal('command'),
+        targetId: t.literal(Server.ServerId),
+        command: t.literal(command),
+        data: dataCodec,
+    });
 }
 
+// type StartGame = t.TypeOf<typeof startGame>;
+// type PauseGame = t.TypeOf<typeof pauseGame>;
+// type ResetGame = t.TypeOf<typeof resetGame>;
+// type UploadGameCode = t.TypeOf<typeof uploadGameCode>;
+// type DumpGame = t.TypeOf<typeof dumpGame>;
+// type LoadGame = t.TypeOf<typeof loadGame>;
+
+// type ServerCommand = t.TypeOf<typeof serverCommand>;
+
 type State = 'uninitialized' | 'connecting' | 'connected' | 'running' | 'paused';
+
+const gameDump = t.type({
+    gameData: SM.gameData,
+    devices: t.record(t.string, deviceDefinition),
+    gameCode: t.string,
+});
+
+type GameDump = t.TypeOf<typeof gameDump>;
 
 export class Server {
     static readonly ServerId = '__server__';
@@ -130,6 +131,10 @@ export class Server {
                 this._workerReadyResolve();
             logger.info('Worker ready');
             break;
+
+        case 'dump':
+            this._client.sendEvent(Server.ServerId, 'gameDump', this.wrapGameDump(decoded.data));
+            break;
         }
     }
 
@@ -159,9 +164,6 @@ export class Server {
     startGame(): void {
         if (!this.connected)
             throw new LogicError('Server not connected');
-
-        if (this._gameCode === null)
-            throw new LogicError('No game code uploaded');
 
         this._worker?.postMessage({
             type: 'start',
@@ -209,14 +211,20 @@ export class Server {
     }
 
     private handleCommand(msg: Command): void {
+        if (msg.targetId !== Server.ServerId)
+            return; // Ignore commands not meant for this server
         logger.debug(`Received command: ${msg}`);
-        if (!isServerCommand(msg)) {
+        const decoded = serverCommand.decode(msg);
+        if (isLeft(decoded)) {
+            const error = new LogicError(formatValidationErrors(decoded.left).join('\n'));
+            this.reportError(error);
             return;
-            throw new LogicError(`Received command for unknown target: ${msg.targetId}`);
         }
 
+        const _msg = decoded.right;
+
         try {
-            switch (msg.command) {
+            switch (_msg.command) {
             case 'startGame':
                 this.startGame();
                 break;
@@ -230,13 +238,50 @@ export class Server {
                 break;
 
             case 'uploadGameCode':
-                this.uploadGameCode(msg.data);
+                this.uploadGameCode(_msg.data);
                 break;
+
+            case 'dumpGame':
+                this.requestGameDump();
+                break;
+
+            case 'loadGame':
+                this.loadGame(_msg.data);
+                break;
+
             }
         } catch (error) {
             this.reportError(error as Error);
         }
 
+    }
+
+    private requestGameDump() {
+        this._worker?.postMessage({
+            type: 'dump',
+        });
+    }
+
+    private wrapGameDump(gameData: SM.GameData): GameDump {
+        return {
+            gameData,
+            devices: Object.fromEntries(this._devices.entries()),
+            gameCode: this._gameCode ?? '',
+        };
+    }
+
+    private loadGame(data: GameDump) {
+
+        this.uploadGameCode(data.gameCode);
+
+        Object.entries(data.devices).forEach(([id, definition]) => {
+            this._client.sendHello(id, definition);
+        });
+
+        this._worker?.postMessage({
+            type: 'load',
+            data: data.gameData,
+        });
     }
 
     uploadGameCode(code: string) {
@@ -246,6 +291,8 @@ export class Server {
     }
 
     private handleEvent(msg: Event): void {
+        if (msg.sourceId === Server.ServerId)
+            return; // Ignore events from self
         console.log('Received event:', msg);
         logger.debug(`Received event: ${msg}`);
         if (!this.running) {
@@ -281,8 +328,12 @@ export class Server {
      */
     private handleHello(msg: Hello): void {
         logger.debug(`Received hello: ${msg}`);
-        this._devices.set(msg.sourceId, msg.definitions);
-        this._client.subscribeToEvents(msg.sourceId);
+        this.addDevice(msg.sourceId, msg.definitions);
+    }
+
+    private addDevice(id: string, definition: DeviceDefinition): void {
+        this._devices.set(id, definition);
+        this._client.subscribeToEvents(id);
 
         // this._worker?.postMessage({
         //     type: 'addDevice',
@@ -309,3 +360,12 @@ export class Server {
         return this.asyncDispose();
     }
 }
+
+const startGame = makeCommand('startGame', t.null);
+const pauseGame = makeCommand('pauseGame', t.null);
+const resetGame = makeCommand('resetGame', t.null);
+const uploadGameCode = makeCommand('uploadGameCode', t.string);
+const dumpGame = makeCommand('dumpGame', t.null);
+const loadGame = makeCommand('loadGame', gameDump);
+
+const serverCommand = t.union([startGame, pauseGame, resetGame, uploadGameCode, dumpGame, loadGame]);

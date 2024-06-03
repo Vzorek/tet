@@ -18,6 +18,7 @@ const Test = game.defineDeviceClass('testClass', state, {
 });
 Test.on('buttonPressed', (source, data, state) => {
     console.log('Button pressed', source, data, state);
+    console.log('state', state);
     const states = [
         {
             led: {

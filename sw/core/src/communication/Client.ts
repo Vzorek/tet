@@ -130,7 +130,7 @@ export class Client extends TypedEventEmitter<ClientEventCallbacks> implements I
             command,
             data,
         };
-        await this.connection.send(Client.getCommandTopic(targetId), JSON.stringify(msg));
+        await this.connection.send(Client.getCommandTopic(targetId), JSON.stringify(msg), true);
     }
 
     async sendEvent(sourceId: string, event: string, data: unknown): Promise<void> {
@@ -145,7 +145,7 @@ export class Client extends TypedEventEmitter<ClientEventCallbacks> implements I
         const msg = {
             definitions,
         };
-        await this.connection.send(Client.getDeviceTopic(sourceId), JSON.stringify(msg));
+        await this.connection.send(Client.getDeviceTopic(sourceId), JSON.stringify(msg), true);
     }
 
     async subscribeToDevices(): Promise<void> {

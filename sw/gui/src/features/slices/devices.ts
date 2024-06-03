@@ -64,6 +64,12 @@ export type Actions = {
             state: DeviceState;
         };
     },
+    loadLayout: {
+        type: 'devices/loadLayout';
+        payload: {
+            devices: Record<string, Pick<DeviceState, 'position' | 'hidden'>>;
+        };
+    },
 };
 
 type UnionOfMembers<T> = T[keyof T];
@@ -106,6 +112,13 @@ const devicesSlice = createSlice({
         updateState(state, action) {
             const { targetId, state: newDeviceState } = action.payload as Actions['updateState']['payload'];
             state.devices[targetId].state = newDeviceState;
+        },
+        loadLayout(state, action) {
+            const { devices } = action.payload as Actions['loadLayout']['payload'];
+            for (const [id, { position, hidden }] of Object.entries(devices)) {
+                state.devices[id].position = position;
+                state.devices[id].hidden = hidden;
+            }
         },
     },
 });

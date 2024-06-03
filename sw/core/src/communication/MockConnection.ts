@@ -20,6 +20,7 @@ function isTopicMatch(subscriptions: string[], topic: string): boolean {
 export class MockConnection extends TypedEventEmitter<ConnectionEventCallbacks> implements IConnection {
     private connected: boolean = false;
     private subscriptions: string[] = [];
+    private cache: Map<string, string> = new Map();
 
     constructor() {
         super();
@@ -57,10 +58,12 @@ export class MockConnection extends TypedEventEmitter<ConnectionEventCallbacks> 
         return this.connected;
     }
 
-    async send(topic: string, payload: string): Promise<void> {
+    async send(topic: string, payload: string, retain: boolean = false): Promise<void> {
+        retain;
         if (!this.connected)
             throw new InvalidStateError('Not connected');
         logger.debug(`Sending message to topic ${topic}: ${payload}`);
+        this.cache.set(topic, payload);
         this.receive(topic, payload);
     }
 

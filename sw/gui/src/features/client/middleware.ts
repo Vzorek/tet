@@ -3,7 +3,8 @@ import { Action } from '../slices';
 import { IDeviceType, deviceTypes as initialDeviceTypes } from '@tet/devices';
 import { Dispatch, MiddlewareAPI } from '@reduxjs/toolkit';
 import { IClientOptions } from 'async-mqtt';
-import { DeviceState } from '../slices/devices';
+import { DeviceState, DeviceStates } from '../slices/devices';
+import { getLayout } from '../store';
 
 const deviceTypes: Record<string, IDeviceType> = { ...initialDeviceTypes };
 
@@ -67,6 +68,7 @@ class Context {
             this.client?.subscribeToCommands(hello.sourceId);
         });
         this.client.subscribeToDevices();
+        this.client.subscribeToEvents('__server__');
     }
 
     async disconnectMQTT() {
@@ -83,7 +85,6 @@ class Context {
             throw new Error('Client is already connected');
 
         this.client = Client.createMock();
-        await this.attachToClient();
 
         if (this.server === null)
             this.server = new Server(this.client);
@@ -94,6 +95,7 @@ class Context {
             ? new URL('workerScript.js', import.meta.url)
             : new URL('@tet/core/dist/src/server/workerScript.js', import.meta.url);
         await this.server.init(url.href);
+        await this.attachToClient();
     }
 
     async disconnectMock() {
@@ -161,6 +163,37 @@ const createConnectionMiddleware = (api: MiddlewareAPI<Dispatch<Action>>) => {
             const { sourceId, event, data } = action.payload;
             if (context.client !== null)
                 context.client.sendEvent(sourceId, event, data);
+            break;
+        }
+
+        case 'client/receiveEvent': {
+            const { sourceId, event, data } = action.payload;
+            if (sourceId !== '__server__')
+                break;
+
+            switch (event) {
+            case 'gameDump':
+                const getDeviceData = ([id, { position, hidden }]: [string, DeviceState]) => [id, { position, hidden }];
+                const devices = Object.entries(api.getState().devices.devices as DeviceStates).map(getDeviceData);
+                const wrappedData = {
+                    serverData: data,
+                    layoutData: {
+                        devices: Object.fromEntries(devices),
+                    },
+                };
+                const blob = new Blob([JSON.stringify(wrappedData)], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.download = 'game.json';
+                link.href = window.URL.createObjectURL(blob);
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                break;
+
+            default:
+                break;
+            }
             break;
         }
 
