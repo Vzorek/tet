@@ -71,6 +71,26 @@ onMessageFromParent(message => {
             case 'addDevice':
                 game.addDevice(msg.definition.typeTag, msg.id);
                 break;
+            case 'dump':
+                postMessageToParent({
+                    type: 'dump',
+                    data: {
+                        devices: Array.from(game.getDevices()).map(device => ({
+                            id: device.id,
+                            state: device.state,
+                            deviceClass: device.deviceClass.name,
+                        })),
+                        links: Object.fromEntries(game.getLinks().entries()),
+                    },
+                });
+                break;
+            case 'load':
+                const gameData = msg.data;
+                Object.entries(gameData.links).forEach(([deviceType, deviceClass]) => { game.linkDeviceType(deviceClass, deviceType); });
+                gameData.devices.forEach(device => {
+                    game.createDevice(device.deviceClass, device.id, device.state);
+                });
+                break;
             default:
                 throw new LogicError(`Unknown message type: ${msg.type}`); // eslint-disable-line @typescript-eslint/no-explicit-any
         }
