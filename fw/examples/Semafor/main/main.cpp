@@ -31,28 +31,7 @@ static const char* TAG = "main";
 SmartLed g_leds(LED_WS2812B, Pins::LED_COUNT, Pins::Leds);
 
 bool tryConnect(const Network& network) {
-    std::atomic_int success = 0;
-
-    auto& wifi = WiFi::singleton();
-
-    auto onConnected = wifi.on(WIFI_EVENT_STA_CONNECTED, [&success](const wifi_event_sta_connected_t* event) {
-        success = 1;
-        success.notify_all();
-    });
-
-    auto onDisconnected = wifi.on(WIFI_EVENT_STA_DISCONNECTED, [&success](const wifi_event_sta_disconnected_t* event) {
-        success = -1;
-        success.notify_all();
-    });
-
-    wifi.connect(network.first, network.second, false);
-
-    success.wait(0);
-
-    wifi.removeListener(WIFI_EVENT_STA_CONNECTED, onConnected);
-    wifi.removeListener(WIFI_EVENT_STA_DISCONNECTED, onDisconnected);
-
-    return success == 1;
+    
 }
 
 std::optional<Network> tryConnect(Networks& networks) {
